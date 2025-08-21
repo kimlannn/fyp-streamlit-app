@@ -91,7 +91,7 @@ def preprocess_degree(user_input):
     df_new = df_new[["Qualification", "CGPA"] + degree_subjects]
     return degree_scaler.transform(df_new)
 
-def get_top_n_programmes(model, X_new, encoder, n=5):
+def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
     pred_probs = model.predict(X_new, verbose=0)[0]
     top_idx = np.argsort(pred_probs)[::-1][:n]
     return encoder.inverse_transform(top_idx)
@@ -242,8 +242,8 @@ else:
         if st.button("Continue to Questionnaire"):
             user_input = {"Qualification": qualification, "CGPA": cgpa, **corrected_grades}
             X_new = preprocess_degree(user_input)
-            top5 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=5)
-            st.session_state["top5_predicted"] = top5
+            top10 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=10)
+            st.session_state["top_predicted"] = top10
 
     # === Questionnaire stage ===
 if "top5_predicted" in st.session_state:
