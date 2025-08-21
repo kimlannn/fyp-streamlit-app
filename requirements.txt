@@ -1,8 +1,9 @@
-streamlit
-tensorflow
-scikit-learn
+streamlit==1.37.1
+tensorflow==2.20.0
+scikit-learn==1.5.2
 joblib
 numpy
 pandas
 pdfplumber
 pillow
+pytesseract
