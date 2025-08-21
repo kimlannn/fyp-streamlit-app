@@ -246,12 +246,14 @@ else:
             st.session_state["top5_predicted"] = top5
 
     # === Questionnaire stage ===
-    if "top5_predicted" in st.session_state:
-        st.header("General Interest Questionnaire")
+if "top5_predicted" in st.session_state:
+    st.header("General Interest Questionnaire")
+
+    if "field" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
 
         for q, fields in general_questions:
-            ans = st.radio(q, fields, key=q)
+            ans = st.radio(q, fields, key=f"general_{q}")
             scores[ans] += 1
 
         if st.button("Submit General Questionnaire"):
@@ -261,37 +263,51 @@ else:
             if len(winners) > 1:
                 st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
             else:
-                field = winners[0]
-                st.success(f"Your strongest interest field: {field}")
+                st.session_state.field = winners[0]
+                st.success(f"Your strongest interest field: {st.session_state.field}")
 
-                final_recommendations = []
-                if field == "Software Engineering":
-                    final_recommendations = ["Software Engineering"]
-                elif field == "Architecture":
-                    final_recommendations = ["Architecture"]
-                elif field == "Maths":
-                    st.subheader("Maths Detailed Questionnaire")
-                    results = {}
-                    for q, progs in maths_questions.items():
-                        ans = st.radio(q, progs, key=q)
-                        results[ans] = results.get(ans, 0) + 1
-                    if st.button("Submit Maths Questionnaire"):
-                        max_prog = max(results.values())
-                        final_recommendations = [p for p, v in results.items() if v == max_prog]
-                elif field == "Engineering":
-                    st.subheader("Engineering Detailed Questionnaire")
-                    results = {}
-                    for q, progs in engineering_questions.items():
-                        ans = st.radio(q, progs, key=q)
-                        results[ans] = results.get(ans, 0) + 1
-                    if st.button("Submit Engineering Questionnaire"):
-                        max_prog = max(results.values())
-                        final_recommendations = [p for p, v in results.items() if v == max_prog]
+    # --- Follow-up questionnaire ---
+    if "field" in st.session_state:
+        field = st.session_state.field
 
-                # ✅ Intersect with Top-5 predicted
-                if final_recommendations:
-                    filtered = [p for p in final_recommendations if p in st.session_state["top5_predicted"]]
-                    if filtered:
-                        st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
-                    else:
-                        st.warning("No overlap between academic results and interests. Please review your grades or answers.")
+        final_recommendations = []
+
+        if field == "Software Engineering":
+            final_recommendations = ["Software Engineering"]
+
+        elif field == "Architecture":
+            final_recommendations = ["Architecture"]
+
+        elif field == "Maths":
+            st.subheader("Maths Detailed Questionnaire")
+            if "maths_results" not in st.session_state:
+                st.session_state.maths_results = {}
+
+            for q, progs in maths_questions.items():
+                ans = st.radio(q, progs, key=f"maths_{q}")
+                st.session_state.maths_results[ans] = st.session_state.maths_results.get(ans, 0) + 1
+
+            if st.button("Submit Maths Questionnaire"):
+                max_prog = max(st.session_state.maths_results.values())
+                final_recommendations = [p for p, v in st.session_state.maths_results.items() if v == max_prog]
+
+        elif field == "Engineering":
+            st.subheader("Engineering Detailed Questionnaire")
+            if "eng_results" not in st.session_state:
+                st.session_state.eng_results = {}
+
+            for q, progs in engineering_questions.items():
+                ans = st.radio(q, progs, key=f"eng_{q}")
+                st.session_state.eng_results[ans] = st.session_state.eng_results.get(ans, 0) + 1
+
+            if st.button("Submit Engineering Questionnaire"):
+                max_prog = max(st.session_state.eng_results.values())
+                final_recommendations = [p for p, v in st.session_state.eng_results.items() if v == max_prog]
+
+        # ✅ Intersect with Top-5 predicted
+        if final_recommendations:
+            filtered = [p for p in final_recommendations if p in st.session_state["top5_predicted"]]
+            if filtered:
+                st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
+            else:
+                st.warning("No overlap between academic results and interests. Please review your grades or answers.")
