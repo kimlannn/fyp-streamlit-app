@@ -8,7 +8,6 @@ scikit-learn==1.6.1
 tensorflow
 keras
 joblib
-pickle5
 
 # OCR & PDF
 pytesseract
