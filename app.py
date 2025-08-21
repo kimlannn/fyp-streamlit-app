@@ -246,7 +246,7 @@ else:
             st.session_state["top_predicted"] = top10
 
     # === Questionnaire stage ===
-if "top5_predicted" in st.session_state:
+if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
     if "field" not in st.session_state:
@@ -306,7 +306,7 @@ if "top5_predicted" in st.session_state:
 
         # ✅ Intersect with Top-5 predicted
         if final_recommendations:
-            filtered = [p for p in final_recommendations if p in st.session_state["top5_predicted"]]
+            filtered = [p for p in final_recommendations if p in st.session_state["top_predicted"]]
             if filtered:
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
             else:
