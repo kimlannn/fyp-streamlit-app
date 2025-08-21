@@ -4,7 +4,6 @@ import pickle
 import joblib
 from tensorflow.keras.models import load_model
 import pdfplumber
-import pytesseract
 from PIL import Image
 
 # ========================
@@ -72,9 +71,16 @@ def extract_text_from_pdf(file):
                 text += txt + "\n"
     return text
 
+# Replace pytesseract import
+#import pytesseract
+import easyocr
+
+# Replace your image OCR function
 def extract_text_from_image(file):
     image = Image.open(file)
-    text = pytesseract.image_to_string(image)
+    reader = easyocr.Reader(['en'])
+    result = reader.readtext(np.array(image))
+    text = " ".join([res[1] for res in result])  # combine detected text
     return text
 
 def parse_grades(text, subject_list, grade_mapping):
