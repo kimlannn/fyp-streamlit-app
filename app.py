@@ -1,22 +1,41 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU init on Streamlit Cloud
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
 import pickle
 from tensorflow.keras.models import load_model
+import pytesseract
+from PIL import Image
+import pdfplumber
 
-# === Load models & encoders ===
-foundation_model = load_model("foundation_model.h5")
-foundation_scaler = joblib.load("foundation_scaler.pkl")
-with open("foundation_encoder.pkl", "rb") as f:
-    foundation_encoder = pickle.load(f)
+# =========================================
+# Cache model loading for speed
+# =========================================
+@st.cache_resource
+def load_foundation_model():
+    model = load_model("foundation_model.h5", compile=False)
+    scaler = joblib.load("foundation_scaler.pkl")
+    with open("foundation_encoder.pkl", "rb") as f:
+        encoder = pickle.load(f)
+    return model, scaler, encoder
 
-degree_model = load_model("degree_model.h5")
-degree_scaler = joblib.load("degree_scaler.pkl")
-with open("degree_encoder.pkl", "rb") as f:
-    degree_encoder = pickle.load(f)
+@st.cache_resource
+def load_degree_model():
+    model = load_model("degree_model.h5", compile=False)
+    scaler = joblib.load("degree_scaler.pkl")
+    with open("degree_encoder.pkl", "rb") as f:
+        encoder = pickle.load(f)
+    return model, scaler, encoder
 
-# === Mappings ===
+foundation_model, foundation_scaler, foundation_encoder = load_foundation_model()
+degree_model, degree_scaler, degree_encoder = load_degree_model()
+
+# =========================================
+# Mappings
+# =========================================
 grade_mapping_foundation = {
     "A": 6, "A+": 6, "A-": 6,
     "B": 5, "B+": 5, "B-": 5,
@@ -36,17 +55,13 @@ grade_mapping_degree = {
     "0": 0
 }
 qualification_mapping_degree = {
-    "A-Level": 0,
-    "Diploma": 1,
+    "A-Level": 0, "Diploma": 1,
     "Foundation in Arts, UTAR": 2,
     "Foundation in Science, UTAR": 3,
     "Matriculation": 4,
-    "STAM": 5,
-    "STPM": 6,
-    "UEC": 7
+    "STAM": 5, "STPM": 6, "UEC": 7
 }
 
-# Subject columns
 foundation_subjects = ["Mathematics", "English", "Science", "Physics", "Chemistry",
                        "Biology", "Additional Mathematics", "Accounting", "Chinese", "Art"]
 
@@ -54,34 +69,81 @@ degree_subjects = ["Mathematics", "Additional Mathematics", "English", "Physics"
                    "Biology", "Chemistry", "ICT", "Technology", "Pendidikan Seni",
                    "Advanced Mathematics I", "Advanced Mathematics II"]
 
-# === Helper functions ===
+# =========================================
+# Preprocessing
+# =========================================
+@st.cache_data
 def preprocess_foundation(user_input):
     df_new = pd.DataFrame([user_input])
     df_new["Qualification"] = df_new["Qualification"].map(qualification_mapping_foundation)
     for col in foundation_subjects:
         df_new[col] = df_new[col].map(grade_mapping_foundation).fillna(0).astype(int)
-    X_new = foundation_scaler.transform(df_new)
-    return X_new
+    return foundation_scaler.transform(df_new)
 
+@st.cache_data
 def preprocess_degree(user_input):
     df_new = pd.DataFrame([user_input])
     df_new["Qualification"] = df_new["Qualification"].map(qualification_mapping_degree).fillna(0).astype(int)
     df_new["CGPA"] = df_new["CGPA"].fillna(0)
     for col in degree_subjects:
         df_new[col] = df_new[col].map(grade_mapping_degree).fillna(0)
-    df_new = df_new[["Qualification", "CGPA"] + degree_subjects]  # order
-    X_new = degree_scaler.transform(df_new)
-    return X_new
+    df_new = df_new[["Qualification", "CGPA"] + degree_subjects]
+    return degree_scaler.transform(df_new)
 
 def get_top_n_programmes(model, X_new, encoder, n=5):
     pred_probs = model.predict(X_new, verbose=0)[0]
     top_idx = np.argsort(pred_probs)[::-1][:n]
     return encoder.inverse_transform(top_idx)
 
-# === Questionnaire mappings (same as before, omitted for brevity) ===
-# ... general_questions, maths_questions, engineering_questions ...
+# =========================================
+# OCR and PDF text extraction
+# =========================================
+def extract_text_from_file(uploaded_file):
+    if uploaded_file.name.endswith(".pdf"):
+        with pdfplumber.open(uploaded_file) as pdf:
+            text = "\n".join([page.extract_text() or "" for page in pdf.pages])
+    else:  # image
+        image = Image.open(uploaded_file)
+        text = pytesseract.image_to_string(image)
+    return text
 
-# === Streamlit App ===
+# (TODO: Replace with actual grade parsing logic)
+def mock_grade_extraction(text, mode="foundation"):
+    if mode == "foundation":
+        return {"Mathematics": "A", "English": "B", "Science": "C"}
+    else:
+        return {"Mathematics": "A", "Physics": "B", "Chemistry": "C"}
+
+# =========================================
+# Questionnaire
+# =========================================
+general_questions = [
+    ("Which activity do you enjoy the most?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which type of task do you usually enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("What kind of schoolwork feels most satisfying?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which hobby sounds most fun?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which kind of job you’d enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which topics interest you the most?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which project would you most enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which type of problem do you prefer?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    ("Which would you most like to learn more about?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+]
+
+maths_questions = {
+    "Which of the following sounds most interesting?": ["Applied Mathematics", "Financial Mathematics", "Actuarial Science", "Quantity Surveying"],
+    "What kind of problems do you enjoy solving most?": ["Applied Mathematics", "Financial Mathematics", "Actuarial Science", "Quantity Surveying"],
+}
+
+engineering_questions = {
+    "Which of these jobs sounds the most exciting?": [
+        "Biomedical Engineering", "Chemical Engineering", "Civil Engineering", "Electrical & Electronic Engineering",
+        "Materials Engineering", "Mechanical Engineering", "Mechatronics Engineering", "Telecommunications Engineering"
+    ]
+}
+
+# =========================================
+# Streamlit App
+# =========================================
 st.title("🎓 UTAR Programme Recommendation System")
 option = st.radio("Choose Recommendation Type:", ["Foundation", "Degree Programme"])
 
@@ -92,9 +154,8 @@ if option == "Foundation":
     qualification = st.selectbox("Qualification:", ["SPM", "UEC", "O-Level"])
 
     if uploaded_file:
-        # TODO: Run OCR on uploaded_file → extracted_grades (dict)
-        st.info("📄 Extracting grades... (placeholder shown)")
-        extracted_grades = {"Mathematics": "A", "English": "B", "Science": "C"}
+        text = extract_text_from_file(uploaded_file)
+        extracted_grades = mock_grade_extraction(text, mode="foundation")
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_foundation.keys())
@@ -121,9 +182,8 @@ else:
     cgpa = st.number_input("Enter CGPA:", min_value=0.0, max_value=4.0, step=0.01, value=0.0)
 
     if uploaded_file:
-        # TODO: Run OCR on uploaded_file → extracted_grades (dict)
-        st.info("📄 Extracting grades... (placeholder shown)")
-        extracted_grades = {"Mathematics": "A", "Physics": "B", "Chemistry": "C"}
+        text = extract_text_from_file(uploaded_file)
+        extracted_grades = mock_grade_extraction(text, mode="degree")
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_degree.keys())
@@ -141,7 +201,51 @@ else:
 
     # === Questionnaire stage ===
     if "top5_predicted" in st.session_state:
-        # (Same questionnaire flow from earlier code, filtering final recommendation
-        # so that only programmes inside st.session_state["top5_predicted"] are shown)
-        st.write("🔍 Top 5 programmes shortlisted internally (hidden from user).")
-        # Implement general → detailed questionnaire logic here
+        st.header("General Interest Questionnaire")
+        scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
+
+        for q, fields in general_questions:
+            ans = st.radio(q, fields, key=q)
+            scores[ans] += 1
+
+        if st.button("Submit General Questionnaire"):
+            max_score = max(scores.values())
+            winners = [k for k, v in scores.items() if v == max_score]
+
+            if len(winners) > 1:
+                st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
+            else:
+                field = winners[0]
+                st.success(f"Your strongest interest field: {field}")
+
+                final_recommendations = []
+                if field == "Software Engineering":
+                    final_recommendations = ["Software Engineering"]
+                elif field == "Architecture":
+                    final_recommendations = ["Architecture"]
+                elif field == "Maths":
+                    st.subheader("Maths Detailed Questionnaire")
+                    results = {}
+                    for q, progs in maths_questions.items():
+                        ans = st.radio(q, progs, key=q)
+                        results[ans] = results.get(ans, 0) + 1
+                    if st.button("Submit Maths Questionnaire"):
+                        max_prog = max(results.values())
+                        final_recommendations = [p for p, v in results.items() if v == max_prog]
+                elif field == "Engineering":
+                    st.subheader("Engineering Detailed Questionnaire")
+                    results = {}
+                    for q, progs in engineering_questions.items():
+                        ans = st.radio(q, progs, key=q)
+                        results[ans] = results.get(ans, 0) + 1
+                    if st.button("Submit Engineering Questionnaire"):
+                        max_prog = max(results.values())
+                        final_recommendations = [p for p, v in results.items() if v == max_prog]
+
+                # ✅ Intersect with Top-5 predicted
+                if final_recommendations:
+                    filtered = [p for p in final_recommendations if p in st.session_state["top5_predicted"]]
+                    if filtered:
+                        st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
+                    else:
+                        st.warning("No overlap between academic results and interests. Please review your grades or answers.")
