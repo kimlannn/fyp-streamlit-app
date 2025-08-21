@@ -7,9 +7,10 @@ import numpy as np
 import joblib
 import pickle
 from tensorflow.keras.models import load_model
-import pytesseract
+import easyocr
 from PIL import Image
 import pdfplumber
+import re
 
 # =========================================
 # Cache model loading for speed
@@ -98,24 +99,69 @@ def get_top_n_programmes(model, X_new, encoder, n=5):
 # =========================================
 # OCR and PDF text extraction
 # =========================================
+reader = easyocr.Reader(["en"])
+
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
         with pdfplumber.open(uploaded_file) as pdf:
             text = "\n".join([page.extract_text() or "" for page in pdf.pages])
     else:  # image
         image = Image.open(uploaded_file)
-        text = pytesseract.image_to_string(image)
+        result = reader.readtext(np.array(image))
+        text = " ".join([res[1] for res in result])
     return text
 
-# (TODO: Replace with actual grade parsing logic)
-def mock_grade_extraction(text, mode="foundation"):
-    if mode == "foundation":
-        return {"Mathematics": "A", "English": "B", "Science": "C"}
-    else:
-        return {"Mathematics": "A", "Physics": "B", "Chemistry": "C"}
+# =========================================
+# OCR Parsing Logic
+# =========================================
+subject_aliases = {
+    "bahasa melayu": "Bahasa Melayu",
+    "bahasa inggeris": "English",
+    "english": "English",
+    "pendidikan moral": "Pendidikan Moral",
+    "sejarah": "Sejarah",
+    "mathematics": "Mathematics",
+    "maths": "Mathematics",
+    "additional mathematics": "Additional Mathematics",
+    "add maths": "Additional Mathematics",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "biology": "Biology",
+    "bahasa cina": "Chinese",
+    "chinese": "Chinese",
+    "pendidikan seni": "Art",
+    "art": "Art",
+    "ict": "ICT",
+    "technology": "Technology",
+    "advanced mathematics i": "Advanced Mathematics I",
+    "advanced mathematics ii": "Advanced Mathematics II"
+}
+grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE)
+
+def normalize(text):
+    return re.sub(r"[^a-z0-9+]", " ", text.lower()).strip()
+
+def parse_grades(text, mode="foundation"):
+    lines = text.splitlines()
+    results = {}
+
+    subjects = foundation_subjects if mode == "foundation" else degree_subjects
+
+    for line in lines:
+        norm_line = normalize(line)
+        for alias, subject in subject_aliases.items():
+            if alias in norm_line:
+                match = grade_pattern.search(line)
+                if match:
+                    grade = match.group(0).upper().replace(" ", "")
+                    results[subject] = grade
+                break
+
+    final_results = {subj: results.get(subj, "0") for subj in subjects}
+    return final_results
 
 # =========================================
-# Questionnaire
+# Questionnaire (same as before)
 # =========================================
 general_questions = [
     ("Which activity do you enjoy the most?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
@@ -155,7 +201,7 @@ if option == "Foundation":
 
     if uploaded_file:
         text = extract_text_from_file(uploaded_file)
-        extracted_grades = mock_grade_extraction(text, mode="foundation")
+        extracted_grades = parse_grades(text, mode="foundation")
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_foundation.keys())
@@ -183,7 +229,7 @@ else:
 
     if uploaded_file:
         text = extract_text_from_file(uploaded_file)
-        extracted_grades = mock_grade_extraction(text, mode="degree")
+        extracted_grades = parse_grades(text, mode="degree")
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_degree.keys())
