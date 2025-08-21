@@ -1,13 +1,17 @@
+# Core
 streamlit
 pandas
 numpy
-scikit-learn
+
+# Machine Learning
+scikit-learn==1.6.1
 tensorflow
 keras
 joblib
 pickle5
+
+# OCR & PDF
 pytesseract
 Pillow
 pdfplumber
 PyPDF2
-regex
