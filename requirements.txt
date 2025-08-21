@@ -10,7 +10,7 @@ keras
 joblib
 
 # OCR & PDF
-pytesseract
+easyocr
 Pillow
 pdfplumber
 PyPDF2
