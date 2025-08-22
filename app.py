@@ -378,7 +378,11 @@ if option == "Foundation":
             X_new = preprocess_foundation(user_input)
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
-            top2_progs = foundation_encoder.inverse_transform(np.array(top2_idx))
+
+            # Convert each index into a one-hot vector for inverse_transform
+            onehots = np.eye(len(probs))[top2_idx]
+            top2_progs = foundation_encoder.inverse_transform(onehots)
+            
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
 
