@@ -11,6 +11,7 @@ import easyocr
 from PIL import Image
 import pdfplumber
 import re
+import random
 
 # =========================================
 # Cache model loading for speed
@@ -163,17 +164,92 @@ def parse_grades(text, mode="foundation"):
 # =========================================
 # Questionnaire (same as before)
 # =========================================
+
 general_questions = [
-    ("Which activity do you enjoy the most?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which type of task do you usually enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("What kind of schoolwork feels most satisfying?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which hobby sounds most fun?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which kind of job you’d enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which topics interest you the most?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which project would you most enjoy?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which type of problem do you prefer?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
-    ("Which would you most like to learn more about?", ["Maths", "Engineering", "Software Engineering", "Architecture"]),
+    {
+        "question": "Q1: Which activity do you enjoy the most?",
+        "options": {
+            "Solving tricky math problems or puzzles": "Maths",
+            "Figuring out how machines or systems work": "Engineering",
+            "Creating things using a computer": "Software Engineering",
+            "Drawing buildings or planning spaces": "Architecture"
+        }
+    },
+    {
+        "question": "Q2: Which type of task do you usually enjoy?",
+        "options": {
+            "Solving calculations or puzzles": "Maths",
+            "Testing how machines, tools or systems work and recording the results": "Engineering",
+            "Building something using software or code": "Software Engineering",
+            "Drawing, crafting or designing": "Architecture"
+        }
+    },
+    {
+        "question": "Q3: What kind of schoolwork feels most satisfying?",
+        "options": {
+            "Getting the right answer in maths or logic problems": "Maths",
+            "Doing experiments and recording observations": "Engineering",
+            "Writing or debugging computer code": "Software Engineering",
+            "Designing models or creative projects": "Architecture"
+        }
+    },
+    {
+        "question": "Q4: Which hobby sounds most fun to you?",
+        "options": {
+            "Solving Sudoku, chess or brain teasers": "Maths",
+            "Fixing or assembling gadgets and machines": "Engineering",
+            "Developing apps, websites or games": "Software Engineering",
+            "Sketching, painting or 3D modelling": "Architecture"
+        }
+    },
+    {
+        "question": "Q5: Which kind of job would you enjoy more?",
+        "options": {
+            "Analysing data or working as a financial analyst": "Maths",
+            "Designing or testing engines, bridges or circuits": "Engineering",
+            "Becoming a software developer or IT specialist": "Software Engineering",
+            "Becoming an architect or interior designer": "Architecture"
+        }
+    },
+    {
+        "question": "Q6: Which topics interest you the most?",
+        "options": {
+            "Numbers, patterns or statistics": "Maths",
+            "Machines, electricity or construction": "Engineering",
+            "Computers, coding or AI": "Software Engineering",
+            "Art, space planning or creative design": "Architecture"
+        }
+    },
+    {
+        "question": "Q7: Which project would you most enjoy?",
+        "options": {
+            "Solving a complex mathematical model": "Maths",
+            "Designing and testing a new robot": "Engineering",
+            "Creating a mobile app or website": "Software Engineering",
+            "Designing a new building layout": "Architecture"
+        }
+    },
+    {
+        "question": "Q8: Which type of problem do you prefer solving?",
+        "options": {
+            "Math puzzles, equations or logic": "Maths",
+            "Fixing machines, systems or structures": "Engineering",
+            "Troubleshooting computer code": "Software Engineering",
+            "Design challenges in spaces or layouts": "Architecture"
+        }
+    },
+    {
+        "question": "Q9: Which would you most like to learn more about?",
+        "options": {
+            "Advanced mathematics and statistics": "Maths",
+            "How engines, circuits or materials work": "Engineering",
+            "Programming languages and AI": "Software Engineering",
+            "Architectural design and modelling": "Architecture"
+        }
+    }
 ]
+
+
 
 maths_questions = {
     "Which of the following sounds most interesting?": ["Applied Mathematics", "Financial Mathematics", "Actuarial Science", "Quantity Surveying"],
@@ -245,6 +321,7 @@ else:
             top10 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=10)
             st.session_state["top_predicted"] = top10
 
+scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
     # === Questionnaire stage ===
 if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
@@ -252,9 +329,14 @@ if "top_predicted" in st.session_state:
     if "field" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
 
-        for q, fields in general_questions:
-            ans = st.radio(q, fields, key=f"general_{q}")
-            scores[ans] += 1
+        # === Questionnaire Loop ===
+        for q in general_questions:
+            # shuffle options each time
+            opts = list(q["options"].keys())
+            random.shuffle(opts)
+            ans = st.radio(q["question"], opts, key=f"general_{q['question']}")
+            chosen_field = q["options"][ans]
+            scores[chosen_field] += 1
 
         if st.button("Submit General Questionnaire"):
             max_score = max(scores.values())
