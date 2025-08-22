@@ -378,10 +378,14 @@ if option == "Foundation":
             X_new = preprocess_foundation(user_input)
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
-
-            # Pass indices directly to LabelEncoder.inverse_transform
-            top2_progs = foundation_encoder.inverse_transform(top2_idx)
-            
+        
+            # Use classes_ if available
+            if hasattr(foundation_encoder, "classes_"):
+                top2_progs = foundation_encoder.classes_[top2_idx]
+            else:
+                # fallback: assume encoder is dict
+                top2_progs = [foundation_encoder[i] for i in top2_idx]
+        
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
 
