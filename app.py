@@ -100,7 +100,7 @@ def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
 # =========================================
 # OCR and PDF text extraction
 # =========================================
-reader = easyocr.Reader(["en"])
+reader = easyocr.Reader(["en"], gpu=False)
 
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
@@ -145,9 +145,7 @@ def normalize(text):
 def parse_grades(text, mode="foundation"):
     lines = text.splitlines()
     results = {}
-
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
-
     for line in lines:
         norm_line = normalize(line)
         for alias, subject in subject_aliases.items():
@@ -157,14 +155,12 @@ def parse_grades(text, mode="foundation"):
                     grade = match.group(0).upper().replace(" ", "")
                     results[subject] = grade
                 break
-
     final_results = {subj: results.get(subj, "0") for subj in subjects}
     return final_results
 
 # =========================================
-# Questionnaire (same as before)
+# Questionnaire
 # =========================================
-
 general_questions = [
     {
         "question": "Q1: Which activity do you enjoy the most?",
@@ -249,25 +245,108 @@ general_questions = [
     }
 ]
 
-
-
 maths_questions = {
-    "Which of the following sounds most interesting?": ["Applied Mathematics", "Financial Mathematics", "Actuarial Science", "Quantity Surveying"],
-    "What kind of problems do you enjoy solving most?": ["Applied Mathematics", "Financial Mathematics", "Actuarial Science", "Quantity Surveying"],
+    "Q1: Which of the following sounds most interesting to you?": {
+        "Solving real-world problems using maths, like planning the fastest way to deliver packages or understanding how diseases spread": "Applied Mathematics",
+        "Figuring out how to grow money, manage investments or understand how banks work": "Financial Mathematics",
+        "Using maths and statistics to predict risks, like how likely someone is to get sick or how long a machine will last": "Actuarial Science",
+        "Calculating building costs and making sure construction projects stay on budget": "Quantity Surveying",
+        "Studying how the universe works, like how planets move or how light behaves": "Physics"
+    },
+    "Q2: What kind of problems do you enjoy solving most?": {
+        "Figuring out how to plan the fastest delivery routes for food orders": "Applied Mathematics",
+        "Deciding how to split your monthly allowance to save and spend wisely": "Financial Mathematics",
+        "Calculating the chances of someone getting a loan based on their background": "Actuarial Science",
+        "Estimating how much it will cost to build a school and making sure it stays within budget": "Quantity Surveying",
+        "Solving puzzles about motion, energy, or forces in the physical world": "Physics"
+    },
+    "Q3: Which innovation would you be most excited to work on?": {
+        "A system that helps a city manage traffic using math models": "Applied Mathematics",
+        "A mobile app that tracks personal spending and predicts savings growth": "Financial Mathematics",
+        "A tool that helps insurance companies estimate accident risks accurately": "Actuarial Science",
+        "A system that calculates the total cost for building a house, including labour and materials": "Quantity Surveying",
+        "A telescope system that can detect planets outside our solar system": "Physics"
+    },
+    "Q4: Which type of task would you enjoy most?": {
+        "Figuring out how to calculate the best angle to kick a ball for a perfect goal": "Applied Mathematics",
+        "Planning how to save and grow money for a big purchase like a car or house": "Financial Mathematics",
+        "Estimating the chances of someone getting sick based on their habits": "Actuarial Science",
+        "Calculating the cost of building a new school and making sure it doesn’t go over budget": "Quantity Surveying",
+        "Designing an experiment to measure the speed of light": "Physics"
+    },
+    "Q5: What motivates you most about maths?": {
+        "Using maths to solve real-world problems like traffic jams or population growth": "Applied Mathematics",
+        "Helping people make smarter money decisions and manage finances": "Financial Mathematics",
+        "Predicting future risks like accidents or illness using data and statistics": "Actuarial Science",
+        "Making sure construction projects stay on budget and are cost-efficient": "Quantity Surveying",
+        "Understanding the laws of nature, from tiny particles to the universe itself": "Physics"
+    }
 }
 
 engineering_questions = {
-    "Which of these jobs sounds the most exciting?": [
-        "Biomedical Engineering", "Chemical Engineering", "Civil Engineering", "Electrical & Electronic Engineering",
-        "Materials Engineering", "Mechanical Engineering", "Mechatronics Engineering", "Telecommunications Engineering"
-    ]
+    "Q1: Which of these jobs sounds the most exciting to you?": {
+        "Making machines that help doctors save lives": "Biomedical Engineering",
+        "Creating useful liquids like shampoo or glue": "Chemical Engineering",
+        "Designing bridges, roads or tall buildings": "Civil Engineering",
+        "Building circuits, fixing electronics or working with electricity": "Electrical & Electronic Engineering",
+        "Making phone screens that don’t break easily when dropped": "Materials Engineering",
+        "Redesigning a motorbike engine so it uses less fuel but still runs fast and smooth": "Mechanical Engineering",
+        "Making smart robots that can move or do tasks": "Mechatronics Engineering",
+        "Helping people stay connected through phones and the internet": "Telecommunications Engineering",
+    },
+    "Q2: What kind of problems do you enjoy solving most?": {
+        "Figuring out how machines or tools can help treat patients better": "Biomedical Engineering",
+        "Finding ways to make products like plastic or fuel in a faster or cheaper way": "Chemical Engineering",
+        "Solving how to make buildings safer during earthquakes or bad weather": "Civil Engineering",
+        "Working on how to send electricity to homes and buildings without losing power": "Electrical & Electronic Engineering",
+        "Creating new materials that are super light, strong, or heat-resistant for special uses": "Materials Engineering",
+        "Designing better systems to keep car engines or machines from overheating": "Mechanical Engineering",
+        "Combining machines, sensors, and computer controls to build smart robots or gadgets": "Mechatronics Engineering",
+        "Finding ways to make the internet or mobile networks faster and more stable": "Telecommunications Engineering",
+    },
+    "Q3: Which innovation would you be most excited to work on?": {
+        "A wearable health tracker that can detect illness early": "Biomedical Engineering",
+        "A plastic-free packaging that naturally breaks down in the environment": "Chemical Engineering",
+        "A stadium with a roof that opens and closes automatically based on weather": "Civil Engineering",
+        "A wireless charging road that powers electric cars while they drive": "Electrical & Electronic Engineering",
+        "A super-lightweight bicycle frame that is strong but easy to carry": "Materials Engineering",
+        "A drone that can fly longer and faster using a new engine design": "Mechanical Engineering",
+        "A robot pet that responds to voice commands and can play games": "Mechatronics Engineering",
+        "A phone app that uses satellites to give signal even in remote jungles": "Telecommunications Engineering",
+    },
+    "Q4: Which task would you most enjoy?": {
+        "Testing how the human body reacts to new medical devices": "Biomedical Engineering",
+        "Mixing and observing chemical reactions in a science lab": "Chemical Engineering",
+        "Designing a safe and stable bridge for a busy road": "Civil Engineering",
+        "Designing lights that turn on or off depending on how people use a room": "Electrical & Electronic Engineering",
+        "Studying how and when airplane parts start to wear out": "Materials Engineering",
+        "Putting together a small model of a car engine to see how it works and moves": "Mechanical Engineering",
+        "Making an automatic hand sanitizer dispenser using sensors": "Mechatronics Engineering",
+        "Fixing problems in a mobile network tower so people can get signal": "Telecommunications Engineering",
+    },
+    "Q5: What motivates you most about engineering?": {
+        "Creating medical tools or devices that help people feel better": "Biomedical Engineering",
+        "Using science to solve pollution or energy problems": "Chemical Engineering",  # or Civil if you want dual
+        "Designing buildings or roads that make life easier for others": "Civil Engineering",
+        "Building smart and energy-saving electrical systems": "Electrical & Electronic Engineering",
+        "Finding new materials to improve everyday products like phones or clothes": "Materials Engineering",
+        "Making engines and machines work better and faster": "Mechanical Engineering",
+        "Mixing machines and coding to build things that work automatically": "Mechatronics Engineering",
+        "Improving how we connect through the internet or phone networks": "Telecommunications Engineering",
+    }
 }
 
-def run_detailed_questionnaire(questions_dict, prefix):
+# =========================================
+# Helper for running questionnaire
+# =========================================
+def run_detailed_questionnaire(questions, key_prefix):
     results = {}
-    for q, options in questions_dict.items():
-        ans = st.radio(q, options, key=f"{prefix}_{q}")
-        results[ans] = results.get(ans, 0) + 1
+    for q, options in questions.items():
+        shuffled = list(options.keys())
+        random.shuffle(shuffled)
+        ans = st.radio(q, shuffled, key=f"{key_prefix}_{q}")
+        chosen = options[ans]
+        results[chosen] = results.get(chosen, 0) + 1
     return results
     
 # =========================================
@@ -331,23 +410,22 @@ else:
             # ✅ Show top-10 predicted programmes to the user
             st.info("📊 Top 10 Academic-based Recommendations:\n\n" + "\n".join([f"{i+1}. {p}" for i, p in enumerate(top10)]))
 
-
-
-scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
-    # === Questionnaire stage ===
+# === Questionnaire stage ===
 if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
+    # Run general questionnaire only if we haven't picked a field yet
     if "field" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
 
-        # === Questionnaire Loop ===
-        for q in general_questions:
-            # shuffle options each time
-            opts = list(q["options"].keys())
+        # general_questions is a list of dicts; access by keys
+        for item in general_questions:
+            q = item["question"]
+            options_map = item["options"]
+            opts = list(options_map.keys())
             random.shuffle(opts)
-            ans = st.radio(q["question"], opts, key=f"general_{q['question']}")
-            chosen_field = q["options"][ans]
+            ans = st.radio(q, opts, key=f"general_{q}")
+            chosen_field = options_map[ans]
             scores[chosen_field] += 1
 
         if st.button("Submit General Questionnaire"):
@@ -356,42 +434,47 @@ if "top_predicted" in st.session_state:
 
             if len(winners) > 1:
                 st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
-                st.session_state.fields = winners  # store multiple
+                pick = st.radio("Pick one field to continue with:", winners, key="tie_pick")
+                if st.button("Continue with selected field"):
+                    st.session_state.field = pick
+                    st.success(f"Continuing with: {pick}")
             else:
-                st.session_state.fields = [winners[0]]
-                st.success(f"Your strongest interest field: {winners[0]}")
+                st.session_state.field = winners[0]
+                st.success(f"Your strongest interest field: {st.session_state.field}")
 
+    # --- Follow-up questionnaire (single chosen field) ---
+    if "field" in st.session_state:
+        field = st.session_state.field
+        final_recommendations = []
 
-    # --- Follow-up questionnaire ---
-    if "fields" in st.session_state:
-        for field in st.session_state.fields:
-            final_recommendations = []
-    
-            if field == "Software Engineering":
-                final_recommendations = ["Software Engineering"]
-    
-            elif field == "Architecture":
-                final_recommendations = ["Architecture"]
-    
-            elif field == "Maths":
-                st.subheader("Maths Detailed Questionnaire")
-                results = run_detailed_questionnaire(maths_questions, "maths")
-                if st.button("Submit Maths Questionnaire"):
-                    max_score = max(results.values())
-                    final_recommendations = [p for p, v in results.items() if v == max_score]
-    
-            elif field == "Engineering":
-                st.subheader("Engineering Detailed Questionnaire")
-                results = run_detailed_questionnaire(engineering_questions, "eng")
-                if st.button("Submit Engineering Questionnaire"):
-                    max_score = max(results.values())
-                    final_recommendations = [p for p, v in results.items() if v == max_score]
-    
-            # ✅ intersect with Top-N predicted
-            if final_recommendations:
-                filtered = [p for p in final_recommendations if p in st.session_state["top_predicted"]]
-                if filtered:
-                    st.success(f"🎯 Final Recommended Programme(s) for {field}: {', '.join(filtered)}")
-                else:
-                    st.warning(f"No overlap between academic results and {field} interests.")
+        if field == "Software Engineering":
+            final_recommendations = ["Software Engineering"]
+
+        elif field == "Architecture":
+            final_recommendations = ["Architecture"]
+
+        elif field == "Maths":
+            st.subheader("Maths Detailed Questionnaire")
+            maths_results = run_detailed_questionnaire(maths_questions, "maths")
+            if st.button("Submit Maths Questionnaire"):
+                max_val = max(maths_results.values())
+                final_recommendations = [p for p, v in maths_results.items() if v == max_val]
+
+        elif field == "Engineering":
+            st.subheader("Engineering Detailed Questionnaire")
+            eng_results = run_detailed_questionnaire(engineering_questions, "eng")
+            if st.button("Submit Engineering Questionnaire"):
+                max_val = max(eng_results.values())
+                final_recommendations = [p for p, v in eng_results.items() if v == max_val]
+
+        # ✅ Intersect with Top-10 predicted
+        if final_recommendations:
+            filtered = [p for p in final_recommendations if p in st.session_state["top_predicted"]]
+            if filtered:
+                st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
+            else:
+                st.warning(
+                    "No overlap between academic results and interests. "
+                    "You can adjust grades above or pick another field in the tie step."
+                )
 
