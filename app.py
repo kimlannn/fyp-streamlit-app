@@ -263,6 +263,13 @@ engineering_questions = {
     ]
 }
 
+def run_detailed_questionnaire(questions_dict, prefix):
+    results = {}
+    for q, options in questions_dict.items():
+        ans = st.radio(q, options, key=f"{prefix}_{q}")
+        results[ans] = results.get(ans, 0) + 1
+    return results
+    
 # =========================================
 # Streamlit App
 # =========================================
