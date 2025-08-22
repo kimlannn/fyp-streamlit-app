@@ -352,34 +352,34 @@ if "top_predicted" in st.session_state:
 
     # --- Follow-up questionnaire ---
     if "fields" in st.session_state:
-    for field in st.session_state.fields:
-        final_recommendations = []
-
-        if field == "Software Engineering":
-            final_recommendations = ["Software Engineering"]
-
-        elif field == "Architecture":
-            final_recommendations = ["Architecture"]
-
-        elif field == "Maths":
-            st.subheader("Maths Detailed Questionnaire")
-            results = run_detailed_questionnaire(maths_questions, "maths")
-            if st.button("Submit Maths Questionnaire"):
-                max_score = max(results.values())
-                final_recommendations = [p for p, v in results.items() if v == max_score]
-
-        elif field == "Engineering":
-            st.subheader("Engineering Detailed Questionnaire")
-            results = run_detailed_questionnaire(engineering_questions, "eng")
-            if st.button("Submit Engineering Questionnaire"):
-                max_score = max(results.values())
-                final_recommendations = [p for p, v in results.items() if v == max_score]
-
-        # ✅ intersect with Top-N predicted
-        if final_recommendations:
-            filtered = [p for p in final_recommendations if p in st.session_state["top_predicted"]]
-            if filtered:
-                st.success(f"🎯 Final Recommended Programme(s) for {field}: {', '.join(filtered)}")
-            else:
-                st.warning(f"No overlap between academic results and {field} interests.")
+        for field in st.session_state.fields:
+            final_recommendations = []
+    
+            if field == "Software Engineering":
+                final_recommendations = ["Software Engineering"]
+    
+            elif field == "Architecture":
+                final_recommendations = ["Architecture"]
+    
+            elif field == "Maths":
+                st.subheader("Maths Detailed Questionnaire")
+                results = run_detailed_questionnaire(maths_questions, "maths")
+                if st.button("Submit Maths Questionnaire"):
+                    max_score = max(results.values())
+                    final_recommendations = [p for p, v in results.items() if v == max_score]
+    
+            elif field == "Engineering":
+                st.subheader("Engineering Detailed Questionnaire")
+                results = run_detailed_questionnaire(engineering_questions, "eng")
+                if st.button("Submit Engineering Questionnaire"):
+                    max_score = max(results.values())
+                    final_recommendations = [p for p, v in results.items() if v == max_score]
+    
+            # ✅ intersect with Top-N predicted
+            if final_recommendations:
+                filtered = [p for p in final_recommendations if p in st.session_state["top_predicted"]]
+                if filtered:
+                    st.success(f"🎯 Final Recommended Programme(s) for {field}: {', '.join(filtered)}")
+                else:
+                    st.warning(f"No overlap between academic results and {field} interests.")
 
