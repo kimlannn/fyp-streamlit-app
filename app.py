@@ -439,14 +439,20 @@ if "top_predicted" in st.session_state:
     # Run general questionnaire only if we haven't picked a field yet
     if "field" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
-
-        # general_questions is a list of dicts; access by keys
-        for item in general_questions:
+    
+        for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
-            opts = list(options_map.keys())
-            random.shuffle(opts)
-            ans = st.radio(q, opts, key=f"general_{q}")
+    
+            # ✅ Shuffle once and store in session_state
+            if f"options_{idx}" not in st.session_state:
+                shuffled = list(options_map.keys())
+                random.shuffle(shuffled)
+                st.session_state[f"options_{idx}"] = shuffled
+            else:
+                shuffled = st.session_state[f"options_{idx}"]
+    
+            ans = st.radio(q, shuffled, key=f"general_{idx}")
             chosen_field = options_map[ans]
             scores[chosen_field] += 1
 
