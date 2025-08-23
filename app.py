@@ -379,8 +379,14 @@ if option == "Foundation":
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
         
-            # Get class names directly from LabelEncoder
-            top2_progs = foundation_encoder.classes_[top2_idx]
+            # Try mapping back properly
+            top2_progs = []
+            for idx in top2_idx:
+                label = foundation_encoder.inverse_transform([idx])[0]
+                # If still number-like, map via classes_
+                if isinstance(label, (int, np.integer)):
+                    label = foundation_encoder.classes_[idx]
+                top2_progs.append(label)
         
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
