@@ -443,38 +443,48 @@ if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
     # Run general questionnaire only if we haven't picked a field yet
-    if "field" not in st.session_state:
+    if "general_scores" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
     
         for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
     
-            # ✅ Shuffle once and store in session_state
-            if f"options_{idx}" not in st.session_state:
-                shuffled = list(options_map.keys())
-                random.shuffle(shuffled)
-                st.session_state[f"options_{idx}"] = shuffled
+            # shuffle persistently
+            if f"general_opts_{idx}" not in st.session_state:
+                opts = list(options_map.keys())
+                random.shuffle(opts)
+                st.session_state[f"general_opts_{idx}"] = opts
             else:
-                shuffled = st.session_state[f"options_{idx}"]
+                opts = st.session_state[f"general_opts_{idx}"]
     
-            ans = st.radio(q, shuffled, key=f"general_{idx}")
+            ans = st.radio(q, opts, key=f"general_{idx}")
             chosen_field = options_map[ans]
             scores[chosen_field] += 1
-
+    
         if st.button("Submit General Questionnaire"):
             max_score = max(scores.values())
             winners = [k for k, v in scores.items() if v == max_score]
-
-            if len(winners) > 1:
-                st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
-                pick = st.radio("Pick one field to continue with:", winners, key="tie_pick")
-                if st.button("Continue with selected field"):
-                    st.session_state.field = pick
-                    st.success(f"Continuing with: {pick}")
-            else:
-                st.session_state.field = winners[0]
-                st.success(f"Your strongest interest field: {st.session_state.field}")
+            st.session_state.general_scores = scores
+            st.session_state.winners = winners
+    else:
+        # ✅ Show their chosen answers again (disabled)
+        st.subheader("✅ Your General Questionnaire Answers")
+        for idx, item in enumerate(general_questions):
+            opts = st.session_state[f"general_opts_{idx}"]
+            st.radio(item["question"], opts, key=f"general_{idx}", disabled=True)
+    
+        # continue with tie-break or detailed
+        winners = st.session_state.winners
+        if len(winners) > 1 and "field" not in st.session_state:
+            st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
+            pick = st.radio("Pick one field to continue with:", winners, key="tie_pick")
+            if st.button("Continue with selected field"):
+                st.session_state.field = pick
+                st.success(f"Continuing with: {pick}")
+        elif "field" not in st.session_state:
+            st.session_state.field = winners[0]
+            st.success(f"Your strongest interest field: {st.session_state.field}")
 
     # --- Follow-up questionnaire (single chosen field) ---
     if "field" in st.session_state:
