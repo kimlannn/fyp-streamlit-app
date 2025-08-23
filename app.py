@@ -355,6 +355,16 @@ def run_detailed_questionnaire(questions, key_prefix):
 st.title("🎓 UTAR Programme Recommendation System")
 option = st.radio("Choose Recommendation Type:", ["Foundation", "Degree Programme"])
 
+programme_mapping = {
+    'FOUNDATION IN ARTS Arts & Social Science stream (Stream X)': 0,
+    'FOUNDATION IN ARTS Management and Accountancy stream (Stream Y)': 1,
+    'FOUNDATION IN SCIENCE Biological Science stream (Stream S)': 2,
+    'FOUNDATION IN SCIENCE Physical Science stream (Stream P)': 3
+}
+
+# Reverse mapping: number → name
+programme_reverse_mapping = {v: k for k, v in programme_mapping.items()}
+
 # ===== Foundation Path =====
 if option == "Foundation":
     st.header("Foundation Programme Recommendation")
@@ -379,14 +389,8 @@ if option == "Foundation":
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
         
-            # Try mapping back properly
-            top2_progs = []
-            for idx in top2_idx:
-                label = foundation_encoder.inverse_transform([idx])[0]
-                # If still number-like, map via classes_
-                if isinstance(label, (int, np.integer)):
-                    label = foundation_encoder.classes_[idx]
-                top2_progs.append(label)
+            # Map numbers back to names
+            top2_progs = [programme_reverse_mapping[idx] for idx in top2_idx]
         
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
