@@ -346,14 +346,20 @@ engineering_questions = {
 # =========================================
 def run_detailed_questionnaire(questions, key_prefix):
     results = {}
-    for q, options in questions.items():
-        shuffled = list(options.keys())
-        random.shuffle(shuffled)
-        ans = st.radio(q, shuffled, key=f"{key_prefix}_{q}")
+    for idx, (q, options) in enumerate(questions.items()):
+        # ✅ Shuffle only once and store in session_state
+        if f"{key_prefix}_options_{idx}" not in st.session_state:
+            shuffled = list(options.keys())
+            random.shuffle(shuffled)
+            st.session_state[f"{key_prefix}_options_{idx}"] = shuffled
+        else:
+            shuffled = st.session_state[f"{key_prefix}_options_{idx}"]
+
+        ans = st.radio(q, shuffled, key=f"{key_prefix}_{idx}")
         chosen = options[ans]
         results[chosen] = results.get(chosen, 0) + 1
     return results
-    
+
 # =========================================
 # Streamlit App
 # =========================================
