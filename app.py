@@ -100,7 +100,17 @@ def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
 # =========================================
 # OCR and PDF text extraction
 # =========================================
-reader = easyocr.Reader(["en"], gpu=False)
+# Use local models folder for EasyOCR so Streamlit Cloud won't redownload
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
+
+if not os.path.exists(MODEL_DIR):
+    os.makedirs(MODEL_DIR)
+
+try:
+    reader = easyocr.Reader(["en"], gpu=False, model_storage_directory=MODEL_DIR)
+except Exception as e:
+    st.error("⚠️ EasyOCR model files missing. Please add them to the 'models/' folder.")
+    reader = None
 
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
