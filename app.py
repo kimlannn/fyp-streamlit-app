@@ -379,12 +379,8 @@ if option == "Foundation":
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
         
-            # Use classes_ if available
-            if hasattr(foundation_encoder, "classes_"):
-                top2_progs = foundation_encoder.classes_[top2_idx]
-            else:
-                # fallback: assume encoder is dict
-                top2_progs = [foundation_encoder[i] for i in top2_idx]
+            # Get class names directly from LabelEncoder
+            top2_progs = foundation_encoder.classes_[top2_idx]
         
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
