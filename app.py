@@ -423,10 +423,14 @@ else:
             user_input = {"Qualification": qualification, "CGPA": cgpa, **corrected_grades}
             X_new = preprocess_degree(user_input)
             top10 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=10)
+        
+            # Store in session_state so it persists across reruns
             st.session_state["top_predicted"] = top10
-            
-            # ✅ Show top-10 predicted programmes to the user
-            st.info("📊 Top 10 Academic-based Recommendations:\n\n" + "\n".join([f"{i+1}. {p}" for i, p in enumerate(top10)]))
+        
+        # ✅ Always show top-10 if available
+        if "top_predicted" in st.session_state:
+            st.info("📊 Top 10 Academic-based Recommendations:\n\n" + 
+                    "\n".join([f"{i+1}. {p}" for i, p in enumerate(st.session_state['top_predicted'])]))
 
 # === Questionnaire stage ===
 if "top_predicted" in st.session_state:
