@@ -252,92 +252,96 @@ general_questions = [
 
 maths_questions = {
     "Q1: Which of the following sounds most interesting to you?": {
-        "Solving real-world problems using maths, like planning the fastest way to deliver packages or understanding how diseases spread": "Applied Mathematics",
-        "Figuring out how to grow money, manage investments or understand how banks work": "Financial Mathematics",
-        "Using maths and statistics to predict risks, like how likely someone is to get sick or how long a machine will last": "Actuarial Science",
-        "Calculating building costs and making sure construction projects stay on budget": "Quantity Surveying",
-        "Studying how the universe works, like how planets move or how light behaves": "Physics"
+        "Solving real-world problems using maths, like planning the fastest way to deliver packages or understanding how diseases spread": "Bachelor of Science (Honours) Applied Mathematics with Computing",
+        "Figuring out how to grow money, manage investments or understand how banks work": "Bachelor of Science (Honours) Financial Mathematics",
+        "Using maths and statistics to predict risks, like how likely someone is to get sick or how long a machine will last": "Bachelor of Science (Honours) Actuarial Science",
+        "Calculating building costs and making sure construction projects stay on budget": "Bachelor of Science (Honours) Quantity Surveying",
+        "Studying how the universe works, like how planets move or how light behaves": "Bachelor of Science (Honours) Physics"
     },
     "Q2: What kind of problems do you enjoy solving most?": {
-        "Figuring out how to plan the fastest delivery routes for food orders": "Applied Mathematics",
-        "Deciding how to split your monthly allowance to save and spend wisely": "Financial Mathematics",
-        "Calculating the chances of someone getting a loan based on their background": "Actuarial Science",
-        "Estimating how much it will cost to build a school and making sure it stays within budget": "Quantity Surveying",
-        "Solving puzzles about motion, energy, or forces in the physical world": "Physics"
+        "Figuring out how to plan the fastest delivery routes for food orders": "Bachelor of Science (Honours) Applied Mathematics with Computing",
+        "Deciding how to split your monthly allowance to save and spend wisely": "Bachelor of Science (Honours) Financial Mathematics",
+        "Calculating the chances of someone getting a loan based on their background": "Bachelor of Science (Honours) Actuarial Science",
+        "Estimating how much it will cost to build a school and making sure it stays within budget": "Bachelor of Science (Honours) Quantity Surveying",
+        "Solving puzzles about motion, energy, or forces in the physical world": "Bachelor of Science (Honours) Physics"
     },
     "Q3: Which innovation would you be most excited to work on?": {
-        "A system that helps a city manage traffic using math models": "Applied Mathematics",
-        "A mobile app that tracks personal spending and predicts savings growth": "Financial Mathematics",
-        "A tool that helps insurance companies estimate accident risks accurately": "Actuarial Science",
-        "A system that calculates the total cost for building a house, including labour and materials": "Quantity Surveying",
-        "A telescope system that can detect planets outside our solar system": "Physics"
+        "A system that helps a city manage traffic using math models": "Bachelor of Science (Honours) Applied Mathematics with Computing",
+        "A mobile app that tracks personal spending and predicts savings growth": "Bachelor of Science (Honours) Financial Mathematics",
+        "A tool that helps insurance companies estimate accident risks accurately": "Bachelor of Science (Honours) Actuarial Science",
+        "A system that calculates the total cost for building a house, including labour and materials": "Bachelor of Science (Honours) Quantity Surveying",
+        "A telescope system that can detect planets outside our solar system": "Bachelor of Science (Honours) Physics"
     },
     "Q4: Which type of task would you enjoy most?": {
-        "Figuring out how to calculate the best angle to kick a ball for a perfect goal": "Applied Mathematics",
-        "Planning how to save and grow money for a big purchase like a car or house": "Financial Mathematics",
-        "Estimating the chances of someone getting sick based on their habits": "Actuarial Science",
-        "Calculating the cost of building a new school and making sure it doesn’t go over budget": "Quantity Surveying",
-        "Designing an experiment to measure the speed of light": "Physics"
+        "Figuring out how to calculate the best angle to kick a ball for a perfect goal": "Bachelor of Science (Honours) Applied Mathematics with Computing",
+        "Planning how to save and grow money for a big purchase like a car or house": "Bachelor of Science (Honours) Financial Mathematics",
+        "Estimating the chances of someone getting sick based on their habits": "Bachelor of Science (Honours) Actuarial Science",
+        "Calculating the cost of building a new school and making sure it doesn’t go over budget": "Bachelor of Science (Honours) Quantity Surveying",
+        "Designing an experiment to measure the speed of light": "Bachelor of Science (Honours) Physics"
     },
     "Q5: What motivates you most about maths?": {
-        "Using maths to solve real-world problems like traffic jams or population growth": "Applied Mathematics",
-        "Helping people make smarter money decisions and manage finances": "Financial Mathematics",
-        "Predicting future risks like accidents or illness using data and statistics": "Actuarial Science",
-        "Making sure construction projects stay on budget and are cost-efficient": "Quantity Surveying",
-        "Understanding the laws of nature, from tiny particles to the universe itself": "Physics"
+        "Using maths to solve real-world problems like traffic jams or population growth": "Bachelor of Science (Honours) Applied Mathematics with Computing",
+        "Helping people make smarter money decisions and manage finances": "Bachelor of Science (Honours) Financial Mathematics",
+        "Predicting future risks like accidents or illness using data and statistics": "Bachelor of Science (Honours) Actuarial Science",
+        "Making sure construction projects stay on budget and are cost-efficient": "Bachelor of Science (Honours) Quantity Surveying",
+        "Understanding the laws of nature, from tiny particles to the universe itself": "Bachelor of Science (Honours) Physics"
     }
 }
 
 engineering_questions = {
     "Q1: Which of these jobs sounds the most exciting to you?": {
-        "Making machines that help doctors save lives": "Biomedical Engineering",
-        "Creating useful liquids like shampoo or glue": "Chemical Engineering",
-        "Designing bridges, roads or tall buildings": "Civil Engineering",
-        "Building circuits, fixing electronics or working with electricity": "Electrical & Electronic Engineering",
-        "Making phone screens that don’t break easily when dropped": "Materials Engineering",
-        "Redesigning a motorbike engine so it uses less fuel but still runs fast and smooth": "Mechanical Engineering",
-        "Making smart robots that can move or do tasks": "Mechatronics Engineering",
-        "Helping people stay connected through phones and the internet": "Telecommunications Engineering",
+        "Making machines that help doctors save lives": "Bachelor of Biomedical Engineering with Honours",
+        "Creating useful liquids like shampoo or glue": "Bachelor of Chemical Engineering with Honours",
+        "Designing bridges, roads or tall buildings": "Bachelor of Civil Engineering with Honours",
+        "Building circuits, fixing electronics or working with electricity": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Making phone screens that don’t break easily when dropped": "Bachelor of Materials Engineering with Honours",
+        "Redesigning a motorbike engine so it uses less fuel but still runs fast and smooth": "Bachelor of Mechanical Engineering with Honours",
+        "Making smart robots that can move or do tasks": "Bachelor of Mechatronics Engineering with Honours",
+        "Helping people stay connected through phones and the internet": "Bachelor of Telecommunications Engineering with Honours",
     },
-    "Q2: What kind of problems do you enjoy solving most?": {
-        "Figuring out how machines or tools can help treat patients better": "Biomedical Engineering",
-        "Finding ways to make products like plastic or fuel in a faster or cheaper way": "Chemical Engineering",
-        "Solving how to make buildings safer during earthquakes or bad weather": "Civil Engineering",
-        "Working on how to send electricity to homes and buildings without losing power": "Electrical & Electronic Engineering",
-        "Creating new materials that are super light, strong, or heat-resistant for special uses": "Materials Engineering",
-        "Designing better systems to keep car engines or machines from overheating": "Mechanical Engineering",
-        "Combining machines, sensors, and computer controls to build smart robots or gadgets": "Mechatronics Engineering",
-        "Finding ways to make the internet or mobile networks faster and more stable": "Telecommunications Engineering",
+
+    "Q2: What school subject do you enjoy the most?": {
+        "Biology – learning about the human body": "Bachelor of Biomedical Engineering with Honours",
+        "Chemistry – mixing and experimenting with chemicals": "Bachelor of Chemical Engineering with Honours",
+        "Mathematics – calculating and solving problems": "Bachelor of Civil Engineering with Honours",
+        "Physics – electricity, circuits, and energy": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Science of materials – metals, plastics, and how they are used": "Bachelor of Materials Engineering with Honours",
+        "Mechanics – motion, forces, and machines": "Bachelor of Mechanical Engineering with Honours",
+        "Technology – robots, sensors, and automation": "Bachelor of Mechatronics Engineering with Honours",
+        "Communication – signals, networks, and data": "Bachelor of Telecommunications Engineering with Honours",
     },
-    "Q3: Which innovation would you be most excited to work on?": {
-        "A wearable health tracker that can detect illness early": "Biomedical Engineering",
-        "A plastic-free packaging that naturally breaks down in the environment": "Chemical Engineering",
-        "A stadium with a roof that opens and closes automatically based on weather": "Civil Engineering",
-        "A wireless charging road that powers electric cars while they drive": "Electrical & Electronic Engineering",
-        "A super-lightweight bicycle frame that is strong but easy to carry": "Materials Engineering",
-        "A drone that can fly longer and faster using a new engine design": "Mechanical Engineering",
-        "A robot pet that responds to voice commands and can play games": "Mechatronics Engineering",
-        "A phone app that uses satellites to give signal even in remote jungles": "Telecommunications Engineering",
+
+    "Q3: Which project would you prefer to work on?": {
+        "Designing an artificial arm for someone who lost theirs": "Bachelor of Biomedical Engineering with Honours",
+        "Finding a way to make fuel from waste cooking oil": "Bachelor of Chemical Engineering with Honours",
+        "Planning a new highway for a busy city": "Bachelor of Civil Engineering with Honours",
+        "Developing a solar-powered phone charger": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Creating stronger but lighter airplane parts": "Bachelor of Materials Engineering with Honours",
+        "Building a faster and safer car engine": "Bachelor of Mechanical Engineering with Honours",
+        "Designing a robot vacuum cleaner that avoids obstacles": "Bachelor of Mechatronics Engineering with Honours",
+        "Improving 5G internet connection for rural areas": "Bachelor of Telecommunications Engineering with Honours",
     },
-    "Q4: Which task would you most enjoy?": {
-        "Testing how the human body reacts to new medical devices": "Biomedical Engineering",
-        "Mixing and observing chemical reactions in a science lab": "Chemical Engineering",
-        "Designing a safe and stable bridge for a busy road": "Civil Engineering",
-        "Designing lights that turn on or off depending on how people use a room": "Electrical & Electronic Engineering",
-        "Studying how and when airplane parts start to wear out": "Materials Engineering",
-        "Putting together a small model of a car engine to see how it works and moves": "Mechanical Engineering",
-        "Making an automatic hand sanitizer dispenser using sensors": "Mechatronics Engineering",
-        "Fixing problems in a mobile network tower so people can get signal": "Telecommunications Engineering",
+
+    "Q4: What motivates you the most about engineering?": {
+        "Helping doctors treat patients with new technology": "Bachelor of Biomedical Engineering with Honours",
+        "Solving pollution or energy problems with science": "Bachelor of Chemical Engineering with Honours",
+        "Designing safe and useful buildings for people": "Bachelor of Civil Engineering with Honours",
+        "Making homes and cities smarter with electricity": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Finding new materials to improve products like phones or clothes": "Bachelor of Materials Engineering with Honours",
+        "Designing powerful machines that improve transportation": "Bachelor of Mechanical Engineering with Honours",
+        "Making robots that help humans with everyday tasks": "Bachelor of Mechatronics Engineering with Honours",
+        "Keeping the world connected through communication systems": "Bachelor of Telecommunications Engineering with Honours",
     },
-    "Q5: What motivates you most about engineering?": {
-        "Creating medical tools or devices that help people feel better": "Biomedical Engineering",
-        "Using science to solve pollution or energy problems": "Chemical Engineering",  # or Civil if you want dual
-        "Designing buildings or roads that make life easier for others": "Civil Engineering",
-        "Building smart and energy-saving electrical systems": "Electrical & Electronic Engineering",
-        "Finding new materials to improve everyday products like phones or clothes": "Materials Engineering",
-        "Making engines and machines work better and faster": "Mechanical Engineering",
-        "Mixing machines and coding to build things that work automatically": "Mechatronics Engineering",
-        "Improving how we connect through the internet or phone networks": "Telecommunications Engineering",
+
+    "Q5: Which tool or equipment would you most like to work with?": {
+        "MRI scanners and prosthetic devices": "Bachelor of Biomedical Engineering with Honours",
+        "Laboratory equipment for chemical experiments": "Bachelor of Chemical Engineering with Honours",
+        "Surveying and construction tools": "Bachelor of Civil Engineering with Honours",
+        "Wires, circuits, and electrical components": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Microscopes and machines for testing materials": "Bachelor of Materials Engineering with Honours",
+        "Engines, turbines, and mechanical parts": "Bachelor of Mechanical Engineering with Honours",
+        "Robots, sensors, and automation kits": "Bachelor of Mechatronics Engineering with Honours",
+        "Satellites, antennas, and communication devices": "Bachelor of Telecommunications Engineering with Honours",
     }
 }
 
