@@ -121,26 +121,21 @@ def extract_text_from_file(uploaded_file):
 # OCR Parsing Logic
 # =========================================
 subject_aliases = {
-    "bahasa melayu": "Bahasa Melayu",
-    "bahasa inggeris": "English",
-    "english": "English",
-    "pendidikan moral": "Pendidikan Moral",
-    "sejarah": "Sejarah",
-    "mathematics": "Mathematics",
-    "maths": "Mathematics",
-    "additional mathematics": "Additional Mathematics",
-    "add maths": "Additional Mathematics",
-    "physics": "Physics",
-    "chemistry": "Chemistry",
-    "biology": "Biology",
-    "bahasa cina": "Chinese",
-    "chinese": "Chinese",
-    "pendidikan seni": "Art",
-    "art": "Art",
-    "ict": "ICT",
-    "technology": "Technology",
-    "advanced mathematics i": "Advanced Mathematics I",
-    "advanced mathematics ii": "Advanced Mathematics II"
+    "Bahasa Inggeris": "English", "English": "English",
+    "Matematik Tambahan": "Additional Mathematics", "Additional Mathematics": "Additional Mathematics",
+    "Matematik": "Mathematics", "Mathematics": "Mathematics",
+    "Mathe": "Mathematics",
+    "Fizik": "Physics", "Physics": "Physics",
+    "Kimia": "Chemistry", "Chemistry": "Chemistry",
+    "Biologi": "Biology", "Biology": "Biology",
+    "Bahasa Cina": "Chinese", "Chinese": "Chinese",
+    "Pendidikan Seni": "Pendidikan Seni", "Pendidikan Seni": "Art", "Art": "Art",
+    "Akaun": "Accounting", "Accounting": "Accounting",
+    "Science": "Science",
+    "ICT": "ICT",
+    "Technology": "Technology",
+    "Advanced Mathematics I": "Advanced Mathematics I",
+    "Advanced Mathematics II": "Advanced Mathematics II"
 }
 grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE)
 
@@ -206,19 +201,19 @@ general_questions = [
     {
         "question": "Q5: Which kind of job would you enjoy more?",
         "options": {
-            "Analysing data or working as a financial analyst": "Maths",
-            "Designing or testing engines, bridges or circuits": "Engineering",
-            "Becoming a software developer or IT specialist": "Software Engineering",
-            "Becoming an architect or interior designer": "Architecture"
+            "Analyzing data to make smart financial decisions": "Maths",
+            "Designing or improving machines, bridges or electronics": "Engineering",
+            "Building useful apps or software": "Software Engineering",
+            "Designing homes, buildings or creative spaces": "Architecture"
         }
     },
     {
         "question": "Q6: Which topics interest you the most?",
         "options": {
-            "Numbers, patterns or statistics": "Maths",
-            "Machines, electricity or construction": "Engineering",
-            "Computers, coding or AI": "Software Engineering",
-            "Art, space planning or creative design": "Architecture"
+            "Money, risk, statistics and patterns": "Maths",
+            "Machines, technology or how things are built": "Engineering",
+            "Apps, games or how websites work": "Software Engineering",
+            "Art, design or how spaces look and feel": "Architecture"
         }
     },
     {
@@ -227,25 +222,25 @@ general_questions = [
             "Solving a complex mathematical model": "Maths",
             "Designing and testing a new robot": "Engineering",
             "Creating a mobile app or website": "Software Engineering",
-            "Designing a new building layout": "Architecture"
+            "Creating a model of a house or a park": "Architecture"
         }
     },
     {
         "question": "Q8: Which type of problem do you prefer solving?",
         "options": {
-            "Math puzzles, equations or logic": "Maths",
-            "Fixing machines, systems or structures": "Engineering",
+            "Figuring out the best deal or investment": "Maths",
+            "Finding smart ways to make machines, systems or structures work better": "Engineering",
             "Troubleshooting computer code": "Software Engineering",
-            "Design challenges in spaces or layouts": "Architecture"
+            "Making a space look both useful and beautiful": "Architecture"
         }
     },
     {
         "question": "Q9: Which would you most like to learn more about?",
         "options": {
-            "Advanced mathematics and statistics": "Maths",
+            "How insurance, banks, or investments use maths": "Maths",
             "How engines, circuits or materials work": "Engineering",
-            "Programming languages and AI": "Software Engineering",
-            "Architectural design and modelling": "Architecture"
+            "How to build your own app or website": "Software Engineering",
+            "How to design a beautiful and functional building": "Architecture"
         }
     }
 ]
@@ -300,30 +295,30 @@ engineering_questions = {
         "Helping people stay connected through phones and the internet": "Bachelor of Telecommunications Engineering with Honours",
     },
 
-    "Q2: What school subject do you enjoy the most?": {
-        "Biology – learning about the human body": "Bachelor of Biomedical Engineering with Honours",
-        "Chemistry – mixing and experimenting with chemicals": "Bachelor of Chemical Engineering with Honours",
-        "Mathematics – calculating and solving problems": "Bachelor of Civil Engineering with Honours",
-        "Physics – electricity, circuits, and energy": "Bachelor of Electrical and Electronic Engineering with Honours",
-        "Science of materials – metals, plastics, and how they are used": "Bachelor of Materials Engineering with Honours",
-        "Mechanics – motion, forces, and machines": "Bachelor of Mechanical Engineering with Honours",
-        "Technology – robots, sensors, and automation": "Bachelor of Mechatronics Engineering with Honours",
-        "Communication – signals, networks, and data": "Bachelor of Telecommunications Engineering with Honours",
+    "Q2: What kind of problems do you enjoy solving most?": {
+        "Figuring out how machines or tools can help treat patients better": "Bachelor of Biomedical Engineering with Honours",
+        "Finding ways to make products like plastic or fuel in a faster or cheaper way": "Bachelor of Chemical Engineering with Honours",
+        "Solving how to make buildings safer during earthquakes or bad weather": "Bachelor of Civil Engineering with Honours",
+        "Working on how to send electricity to homes and buildings without losing power": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Creating new materials that are super light, strong, or heat-resistant for special uses": "Bachelor of Materials Engineering with Honours",
+        "Designing better systems to keep car engines or machines from overheating": "Bachelor of Mechanical Engineering with Honours",
+        "Combining machines, sensors, and computer controls to build smart robots or gadgets": "Bachelor of Mechatronics Engineering with Honours",
+        "Finding ways to make the internet or mobile networks faster and more stable": "Bachelor of Telecommunications Engineering with Honours",
     },
 
-    "Q3: Which project would you prefer to work on?": {
-        "Designing an artificial arm for someone who lost theirs": "Bachelor of Biomedical Engineering with Honours",
-        "Finding a way to make fuel from waste cooking oil": "Bachelor of Chemical Engineering with Honours",
-        "Planning a new highway for a busy city": "Bachelor of Civil Engineering with Honours",
-        "Developing a solar-powered phone charger": "Bachelor of Electrical and Electronic Engineering with Honours",
-        "Creating stronger but lighter airplane parts": "Bachelor of Materials Engineering with Honours",
-        "Building a faster and safer car engine": "Bachelor of Mechanical Engineering with Honours",
-        "Designing a robot vacuum cleaner that avoids obstacles": "Bachelor of Mechatronics Engineering with Honours",
-        "Improving 5G internet connection for rural areas": "Bachelor of Telecommunications Engineering with Honours",
+    "Q3: Which innovation would you be most excited to work on?": {
+        "A wearable health tracker that can detect illness early": "Bachelor of Biomedical Engineering with Honours",
+        "A plastic-free packaging that naturally breaks down in the environment": "Bachelor of Chemical Engineering with Honours",
+        "A stadium with a roof that opens and closes automatically based on weather": "Bachelor of Civil Engineering with Honours",
+        "A wireless charging road that powers electric cars while they drive": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "A super-lightweight bicycle frame that is strong but easy to carry": "Bachelor of Materials Engineering with Honours",
+        "A drone that can fly longer and faster using a new engine design": "Bachelor of Mechanical Engineering with Honours",
+        "A robot pet that responds to voice commands and can play games": "Bachelor of Mechatronics Engineering with Honours",
+        "A phone app that uses satellites to give signal even in remote jungles": "Bachelor of Telecommunications Engineering with Honours",
     },
 
     "Q4: What motivates you the most about engineering?": {
-        "Helping doctors treat patients with new technology": "Bachelor of Biomedical Engineering with Honours",
+        "Creating medical tools or devices that help people feel better": "Bachelor of Biomedical Engineering with Honours",
         "Solving pollution or energy problems with science": "Bachelor of Chemical Engineering with Honours",
         "Designing safe and useful buildings for people": "Bachelor of Civil Engineering with Honours",
         "Making homes and cities smarter with electricity": "Bachelor of Electrical and Electronic Engineering with Honours",
@@ -337,11 +332,11 @@ engineering_questions = {
         "MRI scanners and prosthetic devices": "Bachelor of Biomedical Engineering with Honours",
         "Laboratory equipment for chemical experiments": "Bachelor of Chemical Engineering with Honours",
         "Surveying and construction tools": "Bachelor of Civil Engineering with Honours",
-        "Wires, circuits, and electrical components": "Bachelor of Electrical and Electronic Engineering with Honours",
+        "Wires, circuits and electrical components": "Bachelor of Electrical and Electronic Engineering with Honours",
         "Microscopes and machines for testing materials": "Bachelor of Materials Engineering with Honours",
-        "Engines, turbines, and mechanical parts": "Bachelor of Mechanical Engineering with Honours",
-        "Robots, sensors, and automation kits": "Bachelor of Mechatronics Engineering with Honours",
-        "Satellites, antennas, and communication devices": "Bachelor of Telecommunications Engineering with Honours",
+        "Engines, turbines and mechanical parts": "Bachelor of Mechanical Engineering with Honours",
+        "Robots, sensors and automation kits": "Bachelor of Mechatronics Engineering with Honours",
+        "Satellites, antennas and communication devices": "Bachelor of Telecommunications Engineering with Honours",
     }
 }
 
@@ -376,8 +371,6 @@ programme_mapping = {
     'FOUNDATION IN SCIENCE Biological Science stream (Stream S)': 2,
     'FOUNDATION IN SCIENCE Physical Science stream (Stream P)': 3
 }
-
-# Reverse mapping: number → name
 programme_reverse_mapping = {v: k for k, v in programme_mapping.items()}
 
 # ===== Foundation Path =====
@@ -434,13 +427,13 @@ else:
             X_new = preprocess_degree(user_input)
             top10 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=10)
         
-            # Store in session_state so it persists across reruns
+            # Persist top-10 across reruns
             st.session_state["top_predicted"] = top10
         
-        # ✅ Always show top-10 if available
-        if "top_predicted" in st.session_state:
-            st.info("📊 Top 10 Academic-based Recommendations:\n\n" + 
-                    "\n".join([f"{i+1}. {p}" for i, p in enumerate(st.session_state['top_predicted'])]))
+    # ✅ Always show top-10 if available
+    if "top_predicted" in st.session_state:
+        st.info("📊 Top 10 Academic-based Recommendations:\n\n" + 
+                "\n".join([f"{i+1}. {p}" for i, p in enumerate(st.session_state['top_predicted'])]))
 
 # =========================================
 # Normalization helper for programme names
@@ -457,26 +450,38 @@ def normalize_programme(name: str) -> str:
     name = name.replace("honours", "")
     return name.strip()
 
-# === Questionnaire stage ===
+# =========================================
+# Final selection helpers
+# =========================================
+def pick_two(programmes):
+    """Pick up to 2 programmes according to tie rules."""
+    unique = list(dict.fromkeys(programmes))  # keep order, dedupe
+    if len(unique) <= 2:
+        return unique
+    return random.sample(unique, 2)
+
+# =========================================
+# Questionnaire Flow (Degree only)
+# =========================================
 if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
-    # Run general questionnaire only if we haven't picked a field yet
-    if "field" not in st.session_state:
+    # General questionnaire (stable radios) only if not yet finalized/answered
+    if "general_scores" not in st.session_state and "general_winners" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
-    
+
         for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
-    
-            # ✅ Shuffle once and store in session_state
+
+            # Shuffle once and keep stable
             if f"options_{idx}" not in st.session_state:
                 shuffled = list(options_map.keys())
                 random.shuffle(shuffled)
                 st.session_state[f"options_{idx}"] = shuffled
             else:
                 shuffled = st.session_state[f"options_{idx}"]
-    
+
             ans = st.radio(q, shuffled, key=f"general_{idx}")
             chosen_field = options_map[ans]
             scores[chosen_field] += 1
@@ -485,56 +490,124 @@ if "top_predicted" in st.session_state:
             max_score = max(scores.values())
             winners = [k for k, v in scores.items() if v == max_score]
 
-            if len(winners) > 1:
-                st.warning(f"Tie detected! Possible fields: {', '.join(winners)}")
-                pick = st.radio("Pick one field to continue with:", winners, key="tie_pick")
-                if st.button("Continue with selected field"):
-                    st.session_state.field = pick
-                    st.success(f"Continuing with: {pick}")
+            st.session_state.general_winners = winners
+            st.session_state.general_scores = scores
+
+            # If the tie is only Architecture/Software Engineering → output directly (no detailed step)
+            if all(w in ["Architecture", "Software Engineering"] for w in winners):
+                chosen = pick_two(winners)
+                st.session_state.final_general = chosen
+                st.success(f"General Recommendation: {', '.join(chosen)}")
+
+            # If Maths/Engineering are present in the winners → proceed to detailed questionnaire
+            elif any(w in ["Maths", "Engineering"] for w in winners):
+                # Store all winners; we’ll ask detailed for any of Maths/Engineering present
+                st.session_state.field = winners
+                st.success(f"Proceeding to detailed questionnaire for: {', '.join(winners)}")
+
+            # Single winner Architecture or Software Engineering
             else:
-                st.session_state.field = winners[0]
-                st.success(f"Your strongest interest field: {st.session_state.field}")
+                st.session_state.final_general = winners
+                st.success(f"General Recommendation: {', '.join(winners)}")
 
-    # --- Follow-up questionnaire (single chosen field) ---
+    # Detailed Questionnaire Stage (only if needed)
     if "field" in st.session_state:
-        field = st.session_state.field
-        final_recommendations = []
+        chosen_fields = st.session_state.field
 
-        if field == "Software Engineering":
-            final_recommendations = ["Software Engineering"]
-
-        elif field == "Architecture":
-            final_recommendations = ["Architecture"]
-
-        elif field == "Maths":
+        # Ask Maths detailed if present
+        if "Maths" in chosen_fields and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
             if st.button("Submit Maths Questionnaire"):
                 max_val = max(maths_results.values())
-                final_recommendations = [p for p, v in maths_results.items() if v == max_val]
+                winners = [p for p, v in maths_results.items() if v == max_val]
+                st.session_state.maths_detail = pick_two(winners)
+                st.session_state.maths_done = True
+                st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
 
-        elif field == "Engineering":
+        # Ask Engineering detailed if present
+        if "Engineering" in chosen_fields and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
             eng_results = run_detailed_questionnaire(engineering_questions, "eng")
             if st.button("Submit Engineering Questionnaire"):
                 max_val = max(eng_results.values())
-                final_recommendations = [p for p, v in eng_results.items() if v == max_val]
+                winners = [p for p, v in eng_results.items() if v == max_val]
+                st.session_state.eng_detail = pick_two(winners)
+                st.session_state.eng_done = True
+                st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
 
-        # ✅ Intersect with Top-10 predicted (with normalization)
-        if final_recommendations:
-            normalized_top10 = [normalize_programme(p) for p in st.session_state["top_predicted"]]
-            normalized_finals = [normalize_programme(p) for p in final_recommendations]
+        # When all needed detailed sections are answered, compute final recommendations
+        need_maths = "Maths" in chosen_fields
+        need_eng = "Engineering" in chosen_fields
+        maths_ready = (not need_maths) or ("maths_done" in st.session_state)
+        eng_ready = (not need_eng) or ("eng_done" in st.session_state)
 
-            # keep original names for display
-            filtered = [
-                original for original in st.session_state["top_predicted"]
-                if normalize_programme(original) in normalized_finals
-            ]
+        if maths_ready and eng_ready and ("finalized" not in st.session_state):
+            detailed_results = []
+            if "maths_detail" in st.session_state:
+                detailed_results.extend(st.session_state.maths_detail)
+            if "eng_detail" in st.session_state:
+                detailed_results.extend(st.session_state.eng_detail)
 
-            if filtered:
-                st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
+            final_recommendations = []
+
+            # Only combine general non-detailed fields (Arch/SE) with detailed results
+            # if the general winners contained a mix (Arch/SE together with Maths/Eng).
+            if "general_winners" in st.session_state:
+                gen_winners = st.session_state.general_winners
+                mixed = any(g in ["Architecture", "Software Engineering"] for g in gen_winners) and \
+                        any(g in ["Maths", "Engineering"] for g in gen_winners)
+                if mixed:
+                    non_detailed = [g for g in gen_winners if g in ["Architecture", "Software Engineering"]]
+                    if non_detailed:
+                        final_recommendations.extend(pick_two(non_detailed))
+                    if detailed_results:
+                        final_recommendations.extend(pick_two(detailed_results))
+                    final_recommendations = pick_two(final_recommendations)  # cap to 2
+                else:
+                    # If winners are only Maths/Engineering, final comes from detailed results only
+                    final_recommendations = pick_two(detailed_results)
             else:
-                st.warning(
-                    "No direct overlap between academic results and interests. "
-                    "But don’t worry — you can adjust grades above or explore other fields in the questionnaire."
-                )
+                final_recommendations = pick_two(detailed_results)
+
+            # Intersect with model top-10 (by normalized names)
+            if final_recommendations:
+                normalized_top10 = [normalize_programme(p) for p in st.session_state["top_predicted"]]
+                normalized_finals = [normalize_programme(p) for p in final_recommendations]
+
+                filtered = [
+                    original for original in st.session_state["top_predicted"]
+                    if normalize_programme(original) in normalized_finals
+                ]
+
+                if filtered:
+                    st.success(f"🎯 Final Recommended Programme(s): {', '.join(pick_two(filtered))}")
+                else:
+                    fallback = st.session_state["top_predicted"][:2]
+                    st.warning(
+                        "⚠️ Your answers do not overlap with academic prediction. "
+                        f"Suggesting top academic matches instead: {', '.join(fallback)}"
+                    )
+            st.session_state.finalized = True
+
+    # If user ended with Architecture/Software Engineering only (no detailed step)
+    if "final_general" in st.session_state and "finalized" not in st.session_state:
+        finals = pick_two(st.session_state.final_general)
+
+        normalized_top10 = [normalize_programme(p) for p in st.session_state["top_predicted"]]
+        normalized_finals = [normalize_programme(p) for p in finals]
+
+        filtered = [
+            original for original in st.session_state["top_predicted"]
+            if normalize_programme(original) in normalized_finals
+        ]
+
+        if filtered:
+            st.success(f"🎯 Final Recommended Programme(s): {', '.join(pick_two(filtered))}")
+        else:
+            fallback = st.session_state["top_predicted"][:2]
+            st.warning(
+                "⚠️ Your answers do not overlap with academic prediction. "
+                f"Suggesting top academic matches instead: {', '.join(fallback)}"
+            )
+        st.session_state.finalized = True
