@@ -492,25 +492,26 @@ if "top_predicted" in st.session_state:
             scores[chosen_field] += 1
 
         if st.button("Submit General Questionnaire"):
-            max_score = max(scores.values())
-            winners = [k for k, v in scores.items() if v == max_score]
+            # ✅ Always take top 2 scores
+            sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            winners = [sorted_scores[0][0]]
+            if len(sorted_scores) > 1:
+                winners.append(sorted_scores[1][0])
 
             st.session_state.general_winners = winners
             st.session_state.general_scores = scores
 
-            # If the tie is only Architecture/Software Engineering → output directly (no detailed step)
+            # If both winners are Arch/SE → direct final
             if all(w in ["Architecture", "Software Engineering"] for w in winners):
-                chosen = pick_two(winners)
-                st.session_state.final_general = chosen
-                st.success(f"General Recommendation: {', '.join(chosen)}")
+                st.session_state.final_general = winners
+                st.success(f"General Recommendation: {', '.join(winners)}")
 
-            # If Maths/Engineering are present in the winners → proceed to detailed questionnaire
+            # If Maths/Engineering in winners → proceed to detailed
             elif any(w in ["Maths", "Engineering"] for w in winners):
-                # Store all winners; we’ll ask detailed for any of Maths/Engineering present
                 st.session_state.field = winners
                 st.success(f"Proceeding to detailed questionnaire for: {', '.join(winners)}")
 
-            # Single winner Architecture or Software Engineering
+            # Single Arch/SE only
             else:
                 st.session_state.final_general = winners
                 st.success(f"General Recommendation: {', '.join(winners)}")
@@ -519,7 +520,7 @@ if "top_predicted" in st.session_state:
     if "field" in st.session_state:
         chosen_fields = st.session_state.field
 
-        # Ask Maths detailed if present
+        # Maths questionnaire
         if "Maths" in chosen_fields and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
@@ -530,7 +531,7 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_done = True
                 st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
 
-        # Ask Engineering detailed if present
+        # Engineering questionnaire
         if "Engineering" in chosen_fields and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
             eng_results = run_detailed_questionnaire(engineering_questions, "eng")
@@ -541,7 +542,7 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
 
-        # When all needed detailed sections are answered, compute final recommendations
+        # Finalize detailed stage
         need_maths = "Maths" in chosen_fields
         need_eng = "Engineering" in chosen_fields
         maths_ready = (not need_maths) or ("maths_done" in st.session_state)
@@ -556,48 +557,42 @@ if "top_predicted" in st.session_state:
 
             final_recommendations = []
 
-            # Only combine general non-detailed fields (Arch/SE) with detailed results
-            # if the general winners contained a mix (Arch/SE together with Maths/Eng).
+            # If mixed (Arch/SE + Eng/Maths) → merge both
             if "general_winners" in st.session_state:
                 gen_winners = st.session_state.general_winners
                 mixed = any(g in ["Architecture", "Software Engineering"] for g in gen_winners) and \
                         any(g in ["Maths", "Engineering"] for g in gen_winners)
                 if mixed:
                     non_detailed = [g for g in gen_winners if g in ["Architecture", "Software Engineering"]]
-                    if non_detailed:
-                        final_recommendations.extend(pick_two(non_detailed))
-                    if detailed_results:
-                        final_recommendations.extend(pick_two(detailed_results))
-                    final_recommendations = pick_two(final_recommendations)  # cap to 2
+                    final_recommendations.extend(non_detailed)
+                    final_recommendations.extend(detailed_results)
+                    final_recommendations = pick_two(final_recommendations)
                 else:
-                    # If winners are only Maths/Engineering, final comes from detailed results only
                     final_recommendations = pick_two(detailed_results)
             else:
                 final_recommendations = pick_two(detailed_results)
 
-            # ✅ Intersect with Top-10 predicted (with normalization)
+            # ✅ Intersect with Top-10 predicted
             if final_recommendations:
                 normalized_top10 = [normalize_programme(p) for p in st.session_state["top_predicted"]]
                 normalized_finals = [normalize_programme(p) for p in final_recommendations]
-    
-                # keep original names for display
+
                 filtered = [
                     original for original in st.session_state["top_predicted"]
                     if normalize_programme(original) in normalized_finals
                 ]
-    
+
                 if filtered:
                     st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
                 else:
-                    # fallback to top-2 academics
-                    top2 = st.session_state["top_predicted"][:2]
+                    fallback = st.session_state["top_predicted"][:2]
                     st.warning(
                         f"⚠️ Your answers do not overlap with academic prediction. "
-                        f"Suggesting top academic matches instead: {', '.join(top2)}"
+                        f"Suggesting top academic matches instead: {', '.join(fallback)}"
                     )
             st.session_state.finalized = True
 
-    # If user ended with Architecture/Software Engineering only (no detailed step)
+    # If only Arch/SE (no detailed needed)
     if "final_general" in st.session_state and "finalized" not in st.session_state:
         finals = pick_two(st.session_state.final_general)
 
