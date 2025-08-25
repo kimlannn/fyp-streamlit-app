@@ -121,21 +121,26 @@ def extract_text_from_file(uploaded_file):
 # OCR Parsing Logic
 # =========================================
 subject_aliases = {
-    "Bahasa Inggeris": "English", "English": "English",
-    "Matematik Tambahan": "Additional Mathematics", "Additional Mathematics": "Additional Mathematics",
-    "Matematik": "Mathematics", "Mathematics": "Mathematics",
-    "Mathe": "Mathematics",
-    "Fizik": "Physics", "Physics": "Physics",
-    "Kimia": "Chemistry", "Chemistry": "Chemistry",
-    "Biologi": "Biology", "Biology": "Biology",
-    "Bahasa Cina": "Chinese", "Chinese": "Chinese",
-    "Pendidikan Seni": "Pendidikan Seni", "Pendidikan Seni": "Art", "Art": "Art",
-    "Akaun": "Accounting", "Accounting": "Accounting",
-    "Science": "Science",
-    "ICT": "ICT",
-    "Technology": "Technology",
-    "Advanced Mathematics I": "Advanced Mathematics I",
-    "Advanced Mathematics II": "Advanced Mathematics II"
+    "bahasa melayu": "Bahasa Melayu",
+    "bahasa inggeris": "English",
+    "english": "English",
+    "pendidikan moral": "Pendidikan Moral",
+    "sejarah": "Sejarah",
+    "mathematics": "Mathematics",
+    "maths": "Mathematics",
+    "additional mathematics": "Additional Mathematics",
+    "add maths": "Additional Mathematics",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "biology": "Biology",
+    "bahasa cina": "Chinese",
+    "chinese": "Chinese",
+    "pendidikan seni": "Art",
+    "art": "Art",
+    "ict": "ICT",
+    "technology": "Technology",
+    "advanced mathematics i": "Advanced Mathematics I",
+    "advanced mathematics ii": "Advanced Mathematics II"
 }
 grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE)
 
