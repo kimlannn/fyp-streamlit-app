@@ -498,6 +498,7 @@ if "top_predicted" in st.session_state:
 
             st.session_state.general_winners = winners
             st.session_state.general_scores = scores
+            st.session_state.general_submitted = True   # ✅ flag to lock radios
 
             if all(w in ["Architecture", "Software Engineering"] for w in winners):
                 st.session_state.final_general = winners
@@ -511,9 +512,17 @@ if "top_predicted" in st.session_state:
                 st.session_state.final_general = winners
                 st.success(f"General Recommendation: {', '.join(winners)}")
 
-    # Always show summary of general questionnaire once completed
-    if "general_winners" in st.session_state:
-        st.subheader("✅ General Questionnaire Summary")
+    # --- Show general questionnaire again, but locked ---
+    elif "general_submitted" in st.session_state:
+        st.subheader("✅ General Questionnaire (Your Answers)")
+        for idx, item in enumerate(general_questions):
+            q = item["question"]
+            options_map = item["options"]
+            options_list = st.session_state[f"options_{idx}"]
+            prev_answer = st.session_state[f"general_{idx}"]
+            st.radio(q, options_list, index=options_list.index(prev_answer), 
+                     key=f"general_locked_{idx}", disabled=True)
+
         st.write("**Top Fields of Interest:** " + ", ".join(st.session_state.general_winners))
 
     # ===== Detailed Questionnaire Stage =====
