@@ -575,23 +575,25 @@ if "top_predicted" in st.session_state:
             else:
                 final_recommendations = pick_two(detailed_results)
 
-            # Intersect with model top-10 (by normalized names)
+            # ✅ Intersect with Top-10 predicted (with normalization)
             if final_recommendations:
                 normalized_top10 = [normalize_programme(p) for p in st.session_state["top_predicted"]]
                 normalized_finals = [normalize_programme(p) for p in final_recommendations]
-
+    
+                # keep original names for display
                 filtered = [
                     original for original in st.session_state["top_predicted"]
                     if normalize_programme(original) in normalized_finals
                 ]
-
+    
                 if filtered:
-                    st.success(f"🎯 Final Recommended Programme(s): {', '.join(pick_two(filtered))}")
+                    st.success(f"🎯 Final Recommended Programme(s): {', '.join(filtered)}")
                 else:
-                    fallback = st.session_state["top_predicted"][:2]
+                    # fallback to top-2 academics
+                    top2 = st.session_state["top_predicted"][:2]
                     st.warning(
-                        "⚠️ Your answers do not overlap with academic prediction. "
-                        f"Suggesting top academic matches instead: {', '.join(fallback)}"
+                        f"⚠️ Your answers do not overlap with academic prediction. "
+                        f"Suggesting top academic matches instead: {', '.join(top2)}"
                     )
             st.session_state.finalized = True
 
