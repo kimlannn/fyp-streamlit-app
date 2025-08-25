@@ -1,9 +1,16 @@
+# Core
 streamlit
 pandas
 numpy
+
+# Machine Learning
 scikit-learn==1.6.1
 tensorflow
-easyocr
-pdfplumber
-pillow
+keras
 joblib
+
+# OCR & PDF
+easyocr
+Pillow
+pdfplumber
+PyPDF2
