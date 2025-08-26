@@ -471,14 +471,15 @@ def pick_two(programmes):
 if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
-    # Run general questionnaire if not done yet
-    if "general_scores" not in st.session_state and "general_winners" not in st.session_state:
+    # --- First run: show questionnaire ---
+    if "general_submitted" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
 
         for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
 
+            # shuffle once per question
             if f"options_{idx}" not in st.session_state:
                 shuffled = list(options_map.keys())
                 random.shuffle(shuffled)
@@ -498,8 +499,9 @@ if "top_predicted" in st.session_state:
 
             st.session_state.general_winners = winners
             st.session_state.general_scores = scores
-            st.session_state.general_submitted = True   # ✅ flag to lock radios
+            st.session_state.general_submitted = True   # lock answers
 
+            # Handle outcome
             if all(w in ["Architecture", "Software Engineering"] for w in winners):
                 st.session_state.final_general = winners
                 st.success(f"General Recommendation: {', '.join(winners)}")
@@ -512,16 +514,17 @@ if "top_predicted" in st.session_state:
                 st.session_state.final_general = winners
                 st.success(f"General Recommendation: {', '.join(winners)}")
 
-    # --- Show general questionnaire again, but locked ---
-    elif "general_submitted" in st.session_state:
+    # --- After submission: show locked version ---
+    else:
         st.subheader("✅ General Questionnaire (Your Answers)")
         for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
             options_list = st.session_state[f"options_{idx}"]
-            prev_answer = st.session_state[f"general_{idx}"]
-            st.radio(q, options_list, index=options_list.index(prev_answer), 
-                     key=f"general_locked_{idx}", disabled=True)
+            prev_answer = st.session_state.get(f"general_{idx}")
+            if prev_answer:
+                st.radio(q, options_list, index=options_list.index(prev_answer),
+                         key=f"general_locked_{idx}", disabled=True)
 
         st.write("**Top Fields of Interest:** " + ", ".join(st.session_state.general_winners))
 
@@ -529,6 +532,7 @@ if "top_predicted" in st.session_state:
     if "field" in st.session_state:
         chosen_fields = st.session_state.field
 
+        # --- Maths detailed ---
         if "Maths" in chosen_fields and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
@@ -539,6 +543,7 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_done = True
                 st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
 
+        # --- Engineering detailed ---
         if "Engineering" in chosen_fields and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
             eng_results = run_detailed_questionnaire(engineering_questions, "eng")
@@ -549,6 +554,7 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
 
+        # --- Finalize only when both ready ---
         need_maths = "Maths" in chosen_fields
         need_eng = "Engineering" in chosen_fields
         maths_ready = (not need_maths) or ("maths_done" in st.session_state)
@@ -563,7 +569,7 @@ if "top_predicted" in st.session_state:
 
             final_recommendations = []
 
-            # ✅ Merge Arch/SE winners with detailed results if mixed
+            # merge Arch/SE with detailed if mixed
             if "general_winners" in st.session_state:
                 gen_winners = st.session_state.general_winners
                 mixed = any(g in ["Architecture", "Software Engineering"] for g in gen_winners) and \
@@ -572,13 +578,13 @@ if "top_predicted" in st.session_state:
                     non_detailed = [g for g in gen_winners if g in ["Architecture", "Software Engineering"]]
                     final_recommendations.extend(non_detailed)
                     final_recommendations.extend(detailed_results)
-                    final_recommendations = pick_two(final_recommendations)
                 else:
-                    final_recommendations = pick_two(detailed_results)
+                    final_recommendations.extend(detailed_results)
             else:
-                final_recommendations = pick_two(detailed_results)
+                final_recommendations.extend(detailed_results)
 
-            # ✅ Directly show combined recommendations (no dropping SE/Arch)
+            final_recommendations = pick_two(final_recommendations)
+
             if final_recommendations:
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(final_recommendations)}")
             else:
@@ -594,3 +600,4 @@ if "top_predicted" in st.session_state:
         finals = pick_two(st.session_state.final_general)
         st.success(f"🎯 Final Recommended Programme(s): {', '.join(finals)}")
         st.session_state.finalized = True
+
