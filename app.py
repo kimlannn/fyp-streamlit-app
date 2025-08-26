@@ -600,4 +600,16 @@ if "top_predicted" in st.session_state:
         finals = pick_two(st.session_state.final_general)
         st.success(f"🎯 Final Recommended Programme(s): {', '.join(finals)}")
         st.session_state.finalized = True
+# =========================================
+# 🔄 Run Again Button (reset + scroll top)
+# =========================================
+def reset_all():
+    # clear questionnaire + predictions
+    keys_to_clear = [k for k in st.session_state.keys()]
+    for k in keys_to_clear:
+        del st.session_state[k]
+    st.toast("Recommendation system has been reset!", icon="🔄")
 
+if st.button("🔄 Run Again"):
+    reset_all()
+    st.rerun()
