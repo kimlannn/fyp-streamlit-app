@@ -606,8 +606,8 @@ if option == "Foundation":
         extracted_grades = parse_grades(text, mode="foundation", line_df=line_df)
 
         with st.expander("🔍 OCR Debug (optional)"):
-            st.write("Raw text (first 600 chars):")
-            st.code((text or "")[:600] + ("..." if text and len(text) > 600 else ""))
+            st.write("Raw text (first 1000 chars):")
+            st.code((text or "")[:1000] + ("..." if text and len(text) > 600 else ""))
             if token_df is not None and not token_df.empty:
                 st.write("Token samples:")
                 st.dataframe(token_df.head(20))
