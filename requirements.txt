@@ -6,7 +6,7 @@ tensorflow
 pdfplumber
 pillow
 joblib
-pytesseract
+python-doctr[torch]
 opencv-python-headless
 rapidfuzz
 pdf2image
