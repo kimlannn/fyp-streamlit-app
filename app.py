@@ -167,17 +167,41 @@ def load_doctr_model():
 doctr_model = load_doctr_model()
 
 def doctr_extract_lines(pil_img):
-    """Run docTR OCR on an image and return line-wise text."""
-    doc = DocumentFile.from_images(pil_img)
-    result = doctr_model(doc)
-    json_out = result.export()
+    """Run docTR OCR on a PIL image and return line-wise text.
 
+    docTR's DocumentFile.from_images expects a list of numpy arrays or file paths,
+    not a raw PIL.Image, so we convert the PIL image to a numpy array and pass
+    it as a single-item list.
+    """
+    import numpy as _np
+    import tempfile
+    try:
+        # Convert PIL -> numpy and pass as a list
+        img_array = _np.array(pil_img)
+        doc = DocumentFile.from_images([img_array])
+        result = doctr_model(doc)
+        json_out = result.export()
+    except Exception:
+        # Fallback: save to a temp file and read from path (more robust on some envs)
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                pil_img.save(tmp.name)
+                doc = DocumentFile.from_images(tmp.name)
+                result = doctr_model(doc)
+                json_out = result.export()
+        except Exception as e:
+            # Give up gracefully and return empty text
+            st.warning(f"docTR OCR failed: {e}")
+            return ""
+
+    # Collect line texts from exported structure
     lines = []
-    for page in json_out["pages"]:
-        for block in page["blocks"]:
-            for line in block["lines"]:
-                text = " ".join([w["value"] for w in line["words"]])
-                lines.append(text)
+    for page in json_out.get("pages", []):
+        for block in page.get("blocks", []):
+            for line in block.get("lines", []):
+                text = " ".join([w.get("value", "") for w in line.get("words", [])])
+                if text.strip():
+                    lines.append(text.strip())
     return "\n".join(lines)
 
 def normalize_str(s: str) -> str:
@@ -264,9 +288,14 @@ def extract_text_from_pdf(file_bytes: bytes):
     return text
 
 def extract_tokens_from_image(uploaded_file):
+    """Use docTR to extract line text from uploaded image file.
+
+    Returns (full_text, token_df, line_df). docTR does not give a token_df
+    in the same format as our Tesseract pipeline, so token_df/line_df are None.
+    """
     pil_img = Image.open(uploaded_file).convert("RGB")
     text = doctr_extract_lines(pil_img)
-    # we don’t get token_df/line_df like Tesseract, so return None
+    # docTR export contains word boxes if you later want to build line/token dfs.
     return text, None, None
 
 def extract_text_from_file(uploaded_file):
