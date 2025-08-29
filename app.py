@@ -207,7 +207,7 @@ def doctr_extract_lines(pil_img):
     return "\n".join(lines)
 
 def normalize_str(s: str) -> str:
-    return re.sub(r"[^a-z0-9+ ]", " ", s.lower()).strip()
+    return re.sub(r"[^a-z0-9+\- ]", " ", s.lower()).strip()
 
 def deskew_image(gray):
     # Try Tesseract OSD; if it fails, return as-is
@@ -370,7 +370,6 @@ def parse_grades(text, mode="foundation", line_df=None):
 
     # Preprocess lines so subject+grade are in one line
     lines = preprocess_lines(text)
-    st.write(lines)
 
     for subj in subjects:
         found_grade = None
