@@ -355,9 +355,12 @@ def preprocess_lines(text):
             skip_next = False
             continue
 
-        # If this line is subject and next line looks like a grade → merge
-        if i + 1 < len(lines) and re.match(r"^[A-F][+-]?$", lines[i+1].strip().upper()):
-            merged.append(f"{lines[i]} {lines[i+1]}")
+        # Normal grade pattern (A, A+, A- ... F)
+        grade_pattern = r"^[A-F](?:\s?[+-])?$"
+
+        if i + 1 < len(lines) and re.match(grade_pattern, lines[i+1].strip().upper()):
+            # Merge subject + grade line
+            merged.append(f"{lines[i]} {lines[i+1].replace(' ', '')}")  # remove space in A + / A -
             skip_next = True
         else:
             merged.append(lines[i])
@@ -368,7 +371,7 @@ def parse_grades(text, mode="foundation", line_df=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
 
-    # Preprocess lines so subject+grade are in one line
+    # Preprocess subject/grade lines
     lines = preprocess_lines(text)
 
     for subj in subjects:
@@ -376,8 +379,8 @@ def parse_grades(text, mode="foundation", line_df=None):
 
         for ln in lines:
             if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
-                # Look for grade token in this merged line
-                match = re.search(r"\b([A-F][+-]?)\b", ln.upper())
+                # Match A, A+, A-, B+, ... F
+                match = re.search(r"\b([A-F](?:[+-])?)\b", ln.replace(" ", "").upper())
                 if match:
                     found_grade = match.group(1)
                     break
