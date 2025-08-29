@@ -345,6 +345,20 @@ def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_reg
                     best_score = sc
     return best
 
+# Extra SPM descriptive grade mapping
+grade_keywords_spm = {
+    "CEMERLANG TERTINGGI": "A+",
+    "CEMERLANG TINGGI": "A",
+    "CEMERLANG": "A-",
+    "KEPUJIAN TERTINGGI": "B+",
+    "KEPUJIAN TINGGI": "B",
+    "KEPUJIAN ATAS": "C+",
+    "KEPUJIAN": "C",
+    "LULUS ATAS": "D",
+    "LULUS": "E",
+    "GAGAL": "F",
+}
+
 def parse_grades(text, mode="foundation", line_df=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
@@ -356,22 +370,22 @@ def parse_grades(text, mode="foundation", line_df=None):
     for subj in subjects:
         found_grade = None
 
-        # try aliases (Bahasa Inggeris → English)
-        for alias in alias_map.get(subj, [subj.lower()]):
-            if line_df is not None:
-                g = find_grade_near_subject(line_df, alias)
-                if g:
-                    found_grade = g
-                    break
-
         # fallback: scan plain text line-by-line
-        if not found_grade and text:
+        if text:
             for ln in text.splitlines():
+                # check subject match
                 if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
-                    m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
-                    if m:
-                        found_grade = m.group(0).upper().replace(" ", "")
-                        break
+                    # First check SPM descriptive keywords
+                    for keyword, grade_val in grade_keywords_spm.items():
+                        if keyword in ln.upper():
+                            found_grade = grade_val
+                            break
+                    # Else fallback regex (A+, B, etc.)
+                    if not found_grade:
+                        m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
+                        if m:
+                            found_grade = m.group(0).upper().replace(" ", "")
+                    break
 
         results[subj] = found_grade if found_grade else "0"
 
