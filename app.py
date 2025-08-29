@@ -114,7 +114,7 @@ subject_aliases = {
     "bm": "Bahasa Melayu",
 
     "bahasa inggeris": "English",
-    "bahasainggeris": "English",
+    "BAHASAINGGERIS": "English",
     "english": "English",
     "b. inggeris": "English",
     "bi": "English",
