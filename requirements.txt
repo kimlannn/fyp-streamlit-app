@@ -7,3 +7,6 @@ pdfplumber
 pillow
 joblib
 pytesseract
+opencv-python-headless
+rapidfuzz
+pdf2image
