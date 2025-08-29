@@ -114,6 +114,7 @@ subject_aliases = {
     "bm": "Bahasa Melayu",
 
     "bahasa inggeris": "English",
+    "BAHASA INGGERIS": "English",
     "english": "English",
     "b. inggeris": "English",
     "bi": "English",
@@ -153,10 +154,7 @@ subject_aliases = {
 }
 
 # Match A+, A, A-, B+, B, B-, ..., F (with optional spaces/newline in between)
-grade_pattern = re.compile(
-    r"(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)",
-    re.IGNORECASE
-)
+grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)\b", re.IGNORECASE)
 
 # More forgiving: captures grades even if extra spaces/newlines inside
 grade_like_but_messy = re.compile(
@@ -347,40 +345,37 @@ def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_reg
                     best_score = sc
     return best
 
-def parse_grades(text, mode="foundation", line_df: pd.DataFrame=None):
+def parse_grades(text, mode="foundation", line_df=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
 
-    # 1) Layout-aware: for each canonical subject, check aliases near it
     alias_map = {}
     for alias, canon in subject_aliases.items():
         alias_map.setdefault(canon, []).append(alias)
 
     for subj in subjects:
         found_grade = None
-        for alias in alias_map.get(subj, [subj.lower()]):
-            g = find_grade_near_subject(line_df, alias, grade_pattern, fuzz_threshold=80) if line_df is not None else None
-            if g:
-                found_grade = g
-                break
 
-        # 2) Fallback to regex in plain text if not found in layout pass
+        # try aliases (Bahasa Inggeris → English)
+        for alias in alias_map.get(subj, [subj.lower()]):
+            if line_df is not None:
+                g = find_grade_near_subject(line_df, alias)
+                if g:
+                    found_grade = g
+                    break
+
+        # fallback: scan plain text line-by-line
         if not found_grade and text:
-            # try to find "subject ... grade" on same line segment
-            lines = text.splitlines()
-            for ln in lines:
-                ln_norm = normalize_str(ln)
-                if fuzz.partial_ratio(normalize_str(subj), ln_norm) >= 80:
+            for ln in text.splitlines():
+                if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
                     m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
                     if m:
-                        found_grade = m.group(0).upper().replace(" ", "").replace("\n", "")
+                        found_grade = m.group(0).upper().replace(" ", "")
                         break
 
         results[subj] = found_grade if found_grade else "0"
 
-    # 👀 Debug: check raw subject → grade mapping before DataFrame
     st.write("🔎 Parsed Grades (raw):", results)
-
     return results
 
 # =========================================
