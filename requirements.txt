@@ -3,7 +3,8 @@ pandas
 numpy
 scikit-learn==1.6.1
 tensorflow
-easyocr
 pdfplumber
 pillow
 joblib
+paddleocr
+paddlepaddle
