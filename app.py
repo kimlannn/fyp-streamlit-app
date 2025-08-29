@@ -152,12 +152,16 @@ subject_aliases = {
     "advanced mathematics 2": "Advanced Mathematics II",
 }
 
-# strict grades + some noisy variants
+# Match A+, A, A-, B+, B, B-, ..., F (with optional spaces/newline in between)
 grade_pattern = re.compile(
-    r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE
+    r"(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)",
+    re.IGNORECASE
 )
+
+# More forgiving: captures grades even if extra spaces/newlines inside
 grade_like_but_messy = re.compile(
-    r"\b(A[\s\+]|A-?|B[\s\+]|B-?|C[\s\+]|C-?|D[\s\+]|D-?|E|F)\b", re.IGNORECASE
+    r"(A\s*\+|A\s*-?|B\s*\+|B\s*-?|C\s*\+|C\s*-?|D\s*\+|D\s*-?|E|F)",
+    re.IGNORECASE
 )
 
 @st.cache_resource
@@ -369,7 +373,7 @@ def parse_grades(text, mode="foundation", line_df: pd.DataFrame=None):
                 if fuzz.partial_ratio(normalize_str(subj), ln_norm) >= 80:
                     m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
                     if m:
-                        found_grade = m.group(0).upper().replace(" ", "")
+                        found_grade = m.group(0).upper().replace(" ", "").replace("\n", "")
                         break
 
         results[subj] = found_grade if found_grade else "0"
