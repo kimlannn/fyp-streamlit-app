@@ -344,50 +344,42 @@ def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_reg
                     best = grade
                     best_score = sc
     return best
+    
+def preprocess_lines(text):
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    merged = []
+    skip_next = False
 
+    for i in range(len(lines)):
+        if skip_next:
+            skip_next = False
+            continue
+
+        # If this line is subject and next line looks like a grade → merge
+        if i + 1 < len(lines) and re.match(r"^[A-F][+-]?$", lines[i+1].strip().upper()):
+            merged.append(f"{lines[i]} {lines[i+1]}")
+            skip_next = True
+        else:
+            merged.append(lines[i])
+
+    return merged
+    
 def parse_grades(text, mode="foundation", line_df=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
 
-    # Normalize alias map
-    alias_map = {}
-    for alias, canon in subject_aliases.items():
-        alias_map.setdefault(canon, []).append(alias)
-
-    lines = text.splitlines()
+    # Preprocess lines so subject+grade are in one line
+    lines = preprocess_lines(text)
 
     for subj in subjects:
         found_grade = None
 
         for ln in lines:
             if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
-                # Tokenize line into words
-                tokens = ln.split()
-
-                # Find subject token index
-                subj_index = None
-                for i, token in enumerate(tokens):
-                    if fuzz.partial_ratio(normalize_str(subj), normalize_str(token)) >= 80:
-                        subj_index = i
-                        break
-
-                # If subject found → take next token(s) as grade
-                if subj_index is not None and subj_index + 1 < len(tokens):
-                    candidate = tokens[subj_index + 1].upper().replace(" ", "")
-                    
-                    # Clean candidate to standard grade
-                    if grade_pattern.match(candidate):  # A+, A, B, C, D, E, F
-                        found_grade = candidate
-                    elif grade_like_but_messy.match(candidate):  # messy forms (e.g., "a)", "B-")
-                        found_grade = candidate[0].upper()  # just take the letter
-                    else:
-                        # fallback: check if next-next token is grade
-                        if subj_index + 2 < len(tokens):
-                            candidate2 = tokens[subj_index + 2].upper().replace(" ", "")
-                            if grade_pattern.match(candidate2):
-                                found_grade = candidate2
-
-                if found_grade:
+                # Look for grade token in this merged line
+                match = re.search(r"\b([A-F][+-]?)\b", ln.upper())
+                if match:
+                    found_grade = match.group(1)
                     break
 
         results[subj] = found_grade if found_grade else "0"
