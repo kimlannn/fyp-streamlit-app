@@ -370,6 +370,7 @@ def parse_grades(text, mode="foundation", line_df=None):
 
     # Preprocess lines so subject+grade are in one line
     lines = preprocess_lines(text)
+    st.write(lines)
 
     for subj in subjects:
         found_grade = None
