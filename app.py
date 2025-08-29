@@ -358,7 +358,6 @@ def preprocess_lines(text):
         # If this line is subject and next line looks like a grade → merge
         if i + 1 < len(lines) and re.match(r"^[A-F][+-]?$", lines[i+1].strip().upper()):
             merged.append(f"{lines[i]} {lines[i+1]}")
-            st.write(merged)
             skip_next = True
         else:
             merged.append(lines[i])
