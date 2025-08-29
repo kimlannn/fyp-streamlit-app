@@ -362,8 +362,6 @@ def preprocess_lines(text):
         else:
             merged.append(lines[i])
 
-    st.write(merged)
-
     return merged
     
 def parse_grades(text, mode="foundation", line_df=None):
@@ -379,6 +377,7 @@ def parse_grades(text, mode="foundation", line_df=None):
         for ln in lines:
             if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
                 # Look for grade token in this merged line
+                st.write(ln)
                 match = re.search(r"\b([A-F][+-]?)\b", ln.upper())
                 if match:
                     found_grade = match.group(1)
