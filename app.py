@@ -7,7 +7,7 @@ import numpy as np
 import joblib
 import pickle
 from tensorflow.keras.models import load_model
-from paddleocr import PaddleOCR
+import pytesseract
 from PIL import Image
 import pdfplumber
 import cv2
@@ -93,7 +93,7 @@ def preprocess_degree(user_input):
     df_new = df_new[["Qualification", "CGPA"] + degree_subjects]
     return degree_scaler.transform(df_new)
 
-def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
+def get_top_n_programmes(model, X_new, encoder, n=10):
     pred_probs = model.predict(X_new, verbose=0)[0]
     top_idx = np.argsort(pred_probs)[::-1][:n]
     return encoder.inverse_transform(top_idx)
@@ -101,33 +101,22 @@ def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
 # =========================================
 # OCR and PDF text extraction
 # =========================================
-@st.cache_resource
-def load_paddleocr():
-    return PaddleOCR(use_angle_cls=True, lang="en")
-
-ocr = load_paddleocr()
-
-def preprocess_image(path):
-    """Optional OpenCV preprocessing for OCR"""
-    img = cv2.imread(path)
+def preprocess_image(image: Image.Image):
+    """Preprocess PIL image for better OCR with pytesseract."""
+    img = np.array(image)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-    denoised = cv2.fastNlMeansDenoising(thresh, None, 30, 7, 21)
-    cleaned_path = "cleaned_temp.jpg"
-    cv2.imwrite(cleaned_path, denoised)
-    return cleaned_path
+    denoised = cv2.medianBlur(thresh, 3)
+    return denoised
 
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
         with pdfplumber.open(uploaded_file) as pdf:
             text = "\n".join([page.extract_text() or "" for page in pdf.pages])
     else:  # image
-        img_path = "temp_img.jpg"
         image = Image.open(uploaded_file)
-        image.save(img_path)
-        processed_path = preprocess_image(img_path)
-        results = ocr.ocr(processed_path)
-        text = " ".join([line[1][0] for line in results[0]])
+        processed = preprocess_image(image)
+        text = pytesseract.image_to_string(processed)
     return text
 
 # =========================================
