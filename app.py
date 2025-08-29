@@ -8,11 +8,16 @@ import joblib
 import pickle
 from tensorflow.keras.models import load_model
 import pytesseract
+from pytesseract import Output
 from PIL import Image
 import pdfplumber
 import cv2
 import re
 import random
+from io import BytesIO
+
+# Fuzzy matching for noisy OCR subject names
+from rapidfuzz import fuzz, process
 
 # =========================================
 # Cache model loading for speed
@@ -99,71 +104,265 @@ def get_top_n_programmes(model, X_new, encoder, n=10):
     return encoder.inverse_transform(top_idx)
 
 # =========================================
-# OCR and PDF text extraction
+# OCR helpers (Tesseract + OpenCV + fuzzy matching)
 # =========================================
-def preprocess_image(image: Image.Image):
-    """Preprocess PIL image for better OCR with pytesseract."""
-    img = np.array(image)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-    denoised = cv2.medianBlur(thresh, 3)
-    return denoised
 
-def extract_text_from_file(uploaded_file):
-    if uploaded_file.name.endswith(".pdf"):
-        with pdfplumber.open(uploaded_file) as pdf:
-            text = "\n".join([page.extract_text() or "" for page in pdf.pages])
-    else:  # image
-        image = Image.open(uploaded_file)
-        processed = preprocess_image(image)
-        text = pytesseract.image_to_string(processed)
-    return text
-
-# =========================================
-# OCR Parsing Logic
-# =========================================
+# Subject aliases -> canonical subject name
 subject_aliases = {
     "bahasa melayu": "Bahasa Melayu",
+    "b. melayu": "Bahasa Melayu",
+    "bm": "Bahasa Melayu",
+
     "bahasa inggeris": "English",
     "english": "English",
+    "b. inggeris": "English",
+    "bi": "English",
+
     "pendidikan moral": "Pendidikan Moral",
     "sejarah": "Sejarah",
+
     "mathematics": "Mathematics",
+    "mathematik": "Mathematics",
     "maths": "Mathematics",
+    "mathematic": "Mathematics",
+
     "additional mathematics": "Additional Mathematics",
     "add maths": "Additional Mathematics",
+    "additional mathematic": "Additional Mathematics",
+
     "physics": "Physics",
     "chemistry": "Chemistry",
     "biology": "Biology",
+
     "bahasa cina": "Chinese",
     "chinese": "Chinese",
+    "mandarin": "Chinese",
+
     "pendidikan seni": "Art",
     "art": "Art",
+    "seni": "Art",
+
     "ict": "ICT",
+    "information and communication technology": "ICT",
+
     "technology": "Technology",
     "advanced mathematics i": "Advanced Mathematics I",
-    "advanced mathematics ii": "Advanced Mathematics II"
+    "advanced mathematics 1": "Advanced Mathematics I",
+    "advanced mathematics ii": "Advanced Mathematics II",
+    "advanced mathematics 2": "Advanced Mathematics II",
 }
-grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE)
 
-def normalize(text):
-    return re.sub(r"[^a-z0-9+]", " ", text.lower()).strip()
+# strict grades + some noisy variants
+grade_pattern = re.compile(
+    r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|F)\b", re.IGNORECASE
+)
+grade_like_but_messy = re.compile(
+    r"\b(A[\s\+]|A-?|B[\s\+]|B-?|C[\s\+]|C-?|D[\s\+]|D-?|E|F)\b", re.IGNORECASE
+)
 
-def parse_grades(text, mode="foundation"):
-    lines = text.splitlines()
-    results = {}
+def normalize_str(s: str) -> str:
+    return re.sub(r"[^a-z0-9+ ]", " ", s.lower()).strip()
+
+def deskew_image(gray):
+    # Try Tesseract OSD; if it fails, return as-is
+    try:
+        osd = pytesseract.image_to_osd(gray)
+        angle_match = re.search(r'Rotate: (\d+)', osd)
+        if angle_match:
+            angle = int(angle_match.group(1)) % 360
+            if angle != 0:
+                (h, w) = gray.shape[:2]
+                M = cv2.getRotationMatrix2D((w//2, h//2), -angle, 1.0)
+                gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    except Exception:
+        pass
+    return gray
+
+def preprocess_for_ocr(pil_img: Image.Image, high_contrast=False) -> np.ndarray:
+    img = np.array(pil_img.convert("RGB"))
+    # Scale up small images
+    h, w = img.shape[:2]
+    if min(h, w) < 900:
+        scale = int(900 / min(h, w))
+        img = cv2.resize(img, (w*scale, h*scale), interpolation=cv2.INTER_CUBIC)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    gray = deskew_image(gray)
+
+    if high_contrast:
+        # Strong binarization + denoise for faint prints
+        gray = cv2.bilateralFilter(gray, 9, 75, 75)
+        gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                     cv2.THRESH_BINARY, 31, 15)
+        gray = cv2.medianBlur(gray, 3)
+    else:
+        # Mild clean-up
+        gray = cv2.fastNlMeansDenoising(gray, None, 25, 7, 21)
+        gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    return gray
+
+def tesseract_tokens(image_np: np.ndarray, psm=6):
+    # Get TSV tokens with positions & confidences
+    config = f'--psm {psm}'
+    data = pytesseract.image_to_data(image_np, output_type=Output.DATAFRAME, config=config)
+    # Clean dataframe
+    if data is None or len(data) == 0:
+        return pd.DataFrame(columns=["text","conf","left","top","width","height","line_num","block_num","par_num","page_num"])
+    data = data.dropna(subset=["text"]).copy()
+    data["text_norm"] = data["text"].astype(str).str.strip()
+    data = data[data["text_norm"] != ""]
+    return data
+
+def combine_tokens_to_lines(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame(columns=["page_num","block_num","par_num","line_num","left","top","right","bottom","text"])
+    # group by line and combine
+    groups = df.groupby(["page_num","block_num","par_num","line_num"], as_index=False)
+    lines = []
+    for keys, g in groups:
+        left = int(g["left"].min())
+        top = int(g["top"].min())
+        right = int((g["left"] + g["width"]).max())
+        bottom = int((g["top"] + g["height"]).max())
+        text = " ".join([t for t in g["text_norm"].tolist()])
+        rec = {**dict(zip(["page_num","block_num","par_num","line_num"], keys)),
+               "left": left, "top": top, "right": right, "bottom": bottom,
+               "text": text, "text_norm": normalize_str(text)}
+        lines.append(rec)
+    return pd.DataFrame(lines)
+
+def ocr_image_two_pass(pil_img: Image.Image):
+    # pass 1: normal
+    img1 = preprocess_for_ocr(pil_img, high_contrast=False)
+    df1 = tesseract_tokens(img1, psm=6)
+    lines1 = combine_tokens_to_lines(df1)
+
+    # pass 2: high contrast
+    img2 = preprocess_for_ocr(pil_img, high_contrast=True)
+    df2 = tesseract_tokens(img2, psm=6)
+    lines2 = combine_tokens_to_lines(df2)
+
+    # choose the pass with more recognizable grade patterns or more tokens
+    def score(df, lines):
+        grade_hits = 0
+        for t in df["text_norm"].astype(str):
+            if grade_pattern.search(t) or grade_like_but_messy.search(t):
+                grade_hits += 1
+        return grade_hits * 3 + len(df)
+
+    s1, s2 = score(df1, lines1), score(df2, lines2)
+    if s2 > s1:
+        return df2, lines2, img2
+    return df1, lines1, img1
+
+def extract_text_from_pdf(file_bytes: bytes):
+    # Try selectable text first
+    try:
+        with pdfplumber.open(BytesIO(file_bytes)) as pdf:
+            pages_text = []
+            for p in pdf.pages:
+                pages_text.append(p.extract_text() or "")
+            text = "\n".join(pages_text).strip()
+    except Exception:
+        text = ""
+
+    # If poor text or empty, rasterize pages and OCR them
+    if (not text or len(text) < 50) and PDF2IMAGE_OK:
+        try:
+            images = convert_from_bytes(file_bytes, dpi=300)
+            ocr_texts = []
+            for im in images:
+                df, lines, _ = ocr_image_two_pass(im)
+                ocr_texts.append(" ".join(lines["text"].tolist()) if not lines.empty else "")
+            text = "\n".join(ocr_texts).strip()
+        except Exception:
+            pass
+    return text
+
+def extract_tokens_from_image(uploaded_file):
+    # Return (full_text, token_df, line_df)
+    pil_img = Image.open(uploaded_file).convert("RGB")
+    token_df, line_df, _ = ocr_image_two_pass(pil_img)
+    full_text = " ".join(line_df["text"].tolist()) if not line_df.empty else ""
+    return full_text, token_df, line_df
+
+def extract_text_from_file(uploaded_file):
+    # Unified: for PDFs return text; for images return text + dfs
+    name = (uploaded_file.name or "").lower()
+    if name.endswith(".pdf"):
+        file_bytes = uploaded_file.read()
+        text = extract_text_from_pdf(file_bytes)
+        return text, None, None
+    else:
+        text, token_df, line_df = extract_tokens_from_image(uploaded_file)
+        return text, token_df, line_df
+
+# =========================================
+# Grade parsing (layout-aware)
+# =========================================
+def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_regex=grade_pattern, fuzz_threshold=80):
+    """
+    Find a grade that appears on the same line (or next lines) and to the right
+    of the subject mention.
+    """
+    if line_df is None or line_df.empty:
+        return None
+
+    best = None
+    best_score = -1
+    subj_norm = normalize_str(subject_alias)
+
+    # find candidate lines by fuzzy score
+    for _, row in line_df.iterrows():
+        score = fuzz.partial_ratio(subj_norm, row["text_norm"])
+        if score >= fuzz_threshold:
+            # grade on same line? try regex over the raw text
+            text = row["text"]
+            m = grade_regex.search(text)
+            if not m:
+                # allow a messy match fallback
+                m = grade_like_but_messy.search(text)
+            if m:
+                grade = m.group(0).upper().replace(" ", "")
+                # prefer cleaner strict matches
+                sc = score + (10 if grade_regex.search(text) else 0)
+                if sc > best_score:
+                    best = grade
+                    best_score = sc
+    return best
+
+def parse_grades(text, mode="foundation", line_df: pd.DataFrame=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
-    for line in lines:
-        norm_line = normalize(line)
-        for alias, subject in subject_aliases.items():
-            if alias in norm_line:
-                match = grade_pattern.search(line)
-                if match:
-                    grade = match.group(0).upper().replace(" ", "")
-                    results[subject] = grade
+    results = {}
+
+    # 1) Layout-aware: for each canonical subject, check aliases near it
+    alias_map = {}
+    for alias, canon in subject_aliases.items():
+        alias_map.setdefault(canon, []).append(alias)
+
+    for subj in subjects:
+        found_grade = None
+        for alias in alias_map.get(subj, [subj.lower()]):
+            g = find_grade_near_subject(line_df, alias, grade_pattern, fuzz_threshold=80) if line_df is not None else None
+            if g:
+                found_grade = g
                 break
-    final_results = {subj: results.get(subj, "0") for subj in subjects}
-    return final_results
+
+        # 2) Fallback to regex in plain text if not found in layout pass
+        if not found_grade and text:
+            # try to find "subject ... grade" on same line segment
+            lines = text.splitlines()
+            for ln in lines:
+                ln_norm = normalize_str(ln)
+                if fuzz.partial_ratio(normalize_str(subj), ln_norm) >= 80:
+                    m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
+                    if m:
+                        found_grade = m.group(0).upper().replace(" ", "")
+                        break
+
+        results[subj] = found_grade if found_grade else "0"
+
+    return results
 
 # =========================================
 # Questionnaire
@@ -353,7 +552,7 @@ engineering_questions = {
 def run_detailed_questionnaire(questions, key_prefix):
     results = {}
     for idx, (q, options) in enumerate(questions.items()):
-        # ✅ Shuffle only once and store in session_state
+        # Shuffle only once and store in session_state
         if f"{key_prefix}_options_{idx}" not in st.session_state:
             shuffled = list(options.keys())
             random.shuffle(shuffled)
@@ -387,8 +586,15 @@ if option == "Foundation":
     qualification = st.selectbox("Qualification:", ["SPM", "UEC", "O-Level"])
 
     if uploaded_file:
-        text = extract_text_from_file(uploaded_file)
-        extracted_grades = parse_grades(text, mode="foundation")
+        text, token_df, line_df = extract_text_from_file(uploaded_file)
+        extracted_grades = parse_grades(text, mode="foundation", line_df=line_df)
+
+        with st.expander("🔍 OCR Debug (optional)"):
+            st.write("Raw text (first 600 chars):")
+            st.code((text or "")[:600] + ("..." if text and len(text) > 600 else ""))
+            if token_df is not None and not token_df.empty:
+                st.write("Token samples:")
+                st.dataframe(token_df.head(20))
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_foundation.keys())
@@ -406,7 +612,6 @@ if option == "Foundation":
         
             # Map numbers back to names
             top2_progs = [programme_reverse_mapping[idx] for idx in top2_idx]
-        
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
 
@@ -418,8 +623,15 @@ else:
     cgpa = st.number_input("Enter CGPA:", min_value=0.0, max_value=4.0, step=0.01, value=0.0)
 
     if uploaded_file:
-        text = extract_text_from_file(uploaded_file)
-        extracted_grades = parse_grades(text, mode="degree")
+        text, token_df, line_df = extract_text_from_file(uploaded_file)
+        extracted_grades = parse_grades(text, mode="degree", line_df=line_df)
+
+        with st.expander("🔍 OCR Debug (optional)"):
+            st.write("Raw text (first 600 chars):")
+            st.code((text or "")[:600] + ("..." if text and len(text) > 600 else ""))
+            if token_df is not None and not token_df.empty:
+                st.write("Token samples:")
+                st.dataframe(token_df.head(20))
 
         st.subheader("Validate Extracted Results")
         grade_options = list(grade_mapping_degree.keys())
@@ -602,6 +814,7 @@ if "top_predicted" in st.session_state:
         finals = pick_two(st.session_state.final_general)
         st.success(f"🎯 Final Recommended Programme(s): {', '.join(finals)}")
         st.session_state.finalized = True
+
 # =========================================
 # 🔄 Run Again Button (reset + scroll top)
 # =========================================
