@@ -3,9 +3,8 @@ pandas
 numpy
 scikit-learn==1.6.1
 tensorflow
+pytesseract
 pdfplumber
 pillow
 joblib
-paddleocr==2.7.0.3
-paddlepaddle==2.6.1
 opencv-python-headless
