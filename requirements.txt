@@ -8,3 +8,4 @@ pillow
 joblib
 paddleocr
 paddlepaddle
+opencv-python-headless
