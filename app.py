@@ -378,6 +378,9 @@ def parse_grades(text, mode="foundation", line_df: pd.DataFrame=None):
 
         results[subj] = found_grade if found_grade else "0"
 
+    # 👀 Debug: check raw subject → grade mapping before DataFrame
+    st.write("🔎 Parsed Grades (raw):", results)
+
     return results
 
 # =========================================
