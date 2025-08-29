@@ -362,6 +362,8 @@ def preprocess_lines(text):
         else:
             merged.append(lines[i])
 
+    st.write(merged)
+
     return merged
     
 def parse_grades(text, mode="foundation", line_df=None):
