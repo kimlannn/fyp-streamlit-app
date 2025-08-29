@@ -7,9 +7,10 @@ import numpy as np
 import joblib
 import pickle
 from tensorflow.keras.models import load_model
-import easyocr
+from paddleocr import PaddleOCR
 from PIL import Image
 import pdfplumber
+import cv2
 import re
 import random
 
@@ -101,20 +102,32 @@ def get_top_n_programmes(model, X_new, encoder, n=10):  # default 10 now
 # OCR and PDF text extraction
 # =========================================
 @st.cache_resource
-def load_easyocr():
-    # Load EasyOCR once, cache across reruns
-    return easyocr.Reader(["en"], gpu=False)
+def load_paddleocr():
+    return PaddleOCR(use_angle_cls=True, lang="en")
 
-reader = load_easyocr()
+ocr = load_paddleocr()
+
+def preprocess_image(path):
+    """Optional OpenCV preprocessing for OCR"""
+    img = cv2.imread(path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    denoised = cv2.fastNlMeansDenoising(thresh, None, 30, 7, 21)
+    cleaned_path = "cleaned_temp.jpg"
+    cv2.imwrite(cleaned_path, denoised)
+    return cleaned_path
 
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
         with pdfplumber.open(uploaded_file) as pdf:
             text = "\n".join([page.extract_text() or "" for page in pdf.pages])
     else:  # image
+        img_path = "temp_img.jpg"
         image = Image.open(uploaded_file)
-        result = reader.readtext(np.array(image))
-        text = " ".join([res[1] for res in result])
+        image.save(img_path)
+        processed_path = preprocess_image(img_path)
+        results = ocr.ocr(processed_path)
+        text = " ".join([line[1][0] for line in results[0]])
     return text
 
 # =========================================
