@@ -345,46 +345,49 @@ def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_reg
                     best_score = sc
     return best
 
-# Extra SPM descriptive grade mapping
-grade_keywords_spm = {
-    "CEMERLANG TERTINGGI": "A+",
-    "CEMERLANG TINGGI": "A",
-    "CEMERLANG": "A-",
-    "KEPUJIAN TERTINGGI": "B+",
-    "KEPUJIAN TINGGI": "B",
-    "KEPUJIAN ATAS": "C+",
-    "KEPUJIAN": "C",
-    "LULUS ATAS": "D",
-    "LULUS": "E",
-    "GAGAL": "F",
-}
-
 def parse_grades(text, mode="foundation", line_df=None):
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
 
+    # Normalize alias map
     alias_map = {}
     for alias, canon in subject_aliases.items():
         alias_map.setdefault(canon, []).append(alias)
 
+    lines = text.splitlines()
+
     for subj in subjects:
         found_grade = None
 
-        # fallback: scan plain text line-by-line
-        if text:
-            for ln in text.splitlines():
-                # check subject match
-                if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
-                    # First check SPM descriptive keywords
-                    for keyword, grade_val in grade_keywords_spm.items():
-                        if keyword in ln.upper():
-                            found_grade = grade_val
-                            break
-                    # Else fallback regex (A+, B, etc.)
-                    if not found_grade:
-                        m = grade_pattern.search(ln) or grade_like_but_messy.search(ln)
-                        if m:
-                            found_grade = m.group(0).upper().replace(" ", "")
+        for ln in lines:
+            if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 80:
+                # Tokenize line into words
+                tokens = ln.split()
+
+                # Find subject token index
+                subj_index = None
+                for i, token in enumerate(tokens):
+                    if fuzz.partial_ratio(normalize_str(subj), normalize_str(token)) >= 80:
+                        subj_index = i
+                        break
+
+                # If subject found → take next token(s) as grade
+                if subj_index is not None and subj_index + 1 < len(tokens):
+                    candidate = tokens[subj_index + 1].upper().replace(" ", "")
+                    
+                    # Clean candidate to standard grade
+                    if grade_pattern.match(candidate):  # A+, A, B, C, D, E, F
+                        found_grade = candidate
+                    elif grade_like_but_messy.match(candidate):  # messy forms (e.g., "a)", "B-")
+                        found_grade = candidate[0].upper()  # just take the letter
+                    else:
+                        # fallback: check if next-next token is grade
+                        if subj_index + 2 < len(tokens):
+                            candidate2 = tokens[subj_index + 2].upper().replace(" ", "")
+                            if grade_pattern.match(candidate2):
+                                found_grade = candidate2
+
+                if found_grade:
                     break
 
         results[subj] = found_grade if found_grade else "0"
@@ -619,7 +622,7 @@ if option == "Foundation":
 
         with st.expander("🔍 OCR Debug (optional)"):
             st.write("Raw text (first 1000 chars):")
-            st.code((text or "")[:1000] + ("..." if text and len(text) > 600 else ""))
+            st.code((text or "")[:1000] + ("..." if text and len(text) > 1000 else ""))
             if token_df is not None and not token_df.empty:
                 st.write("Token samples:")
                 st.dataframe(token_df.head(20))
