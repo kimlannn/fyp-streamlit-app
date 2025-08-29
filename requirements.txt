@@ -6,6 +6,6 @@ tensorflow
 pdfplumber
 pillow
 joblib
-paddleocr
-paddlepaddle
+paddleocr==2.7.0.3
+paddlepaddle==2.6.1
 opencv-python-headless
