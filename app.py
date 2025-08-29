@@ -7,8 +7,8 @@ import numpy as np
 import joblib
 import pickle
 from tensorflow.keras.models import load_model
-import pytesseract
-from pytesseract import Output
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
 from PIL import Image
 import pdfplumber
 import cv2
@@ -160,6 +160,26 @@ grade_like_but_messy = re.compile(
     r"\b(A[\s\+]|A-?|B[\s\+]|B-?|C[\s\+]|C-?|D[\s\+]|D-?|E|F)\b", re.IGNORECASE
 )
 
+@st.cache_resource
+def load_doctr_model():
+    return ocr_predictor(pretrained=True)
+
+doctr_model = load_doctr_model()
+
+def doctr_extract_lines(pil_img):
+    """Run docTR OCR on an image and return line-wise text."""
+    doc = DocumentFile.from_images(pil_img)
+    result = doctr_model(doc)
+    json_out = result.export()
+
+    lines = []
+    for page in json_out["pages"]:
+        for block in page["blocks"]:
+            for line in block["lines"]:
+                text = " ".join([w["value"] for w in line["words"]])
+                lines.append(text)
+    return "\n".join(lines)
+
 def normalize_str(s: str) -> str:
     return re.sub(r"[^a-z0-9+ ]", " ", s.lower()).strip()
 
@@ -201,18 +221,6 @@ def preprocess_for_ocr(pil_img: Image.Image, high_contrast=False) -> np.ndarray:
         gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
     return gray
 
-def tesseract_tokens(image_np: np.ndarray, psm=6):
-    # Get TSV tokens with positions & confidences
-    config = f'--psm {psm}'
-    data = pytesseract.image_to_data(image_np, output_type=Output.DATAFRAME, config=config)
-    # Clean dataframe
-    if data is None or len(data) == 0:
-        return pd.DataFrame(columns=["text","conf","left","top","width","height","line_num","block_num","par_num","page_num"])
-    data = data.dropna(subset=["text"]).copy()
-    data["text_norm"] = data["text"].astype(str).str.strip()
-    data = data[data["text_norm"] != ""]
-    return data
-
 def combine_tokens_to_lines(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["page_num","block_num","par_num","line_num","left","top","right","bottom","text"])
@@ -230,30 +238,6 @@ def combine_tokens_to_lines(df: pd.DataFrame) -> pd.DataFrame:
                "text": text, "text_norm": normalize_str(text)}
         lines.append(rec)
     return pd.DataFrame(lines)
-
-def ocr_image_two_pass(pil_img: Image.Image):
-    # pass 1: normal
-    img1 = preprocess_for_ocr(pil_img, high_contrast=False)
-    df1 = tesseract_tokens(img1, psm=6)
-    lines1 = combine_tokens_to_lines(df1)
-
-    # pass 2: high contrast
-    img2 = preprocess_for_ocr(pil_img, high_contrast=True)
-    df2 = tesseract_tokens(img2, psm=6)
-    lines2 = combine_tokens_to_lines(df2)
-
-    # choose the pass with more recognizable grade patterns or more tokens
-    def score(df, lines):
-        grade_hits = 0
-        for t in df["text_norm"].astype(str):
-            if grade_pattern.search(t) or grade_like_but_messy.search(t):
-                grade_hits += 1
-        return grade_hits * 3 + len(df)
-
-    s1, s2 = score(df1, lines1), score(df2, lines2)
-    if s2 > s1:
-        return df2, lines2, img2
-    return df1, lines1, img1
 
 def extract_text_from_pdf(file_bytes: bytes):
     # Try selectable text first
@@ -280,11 +264,10 @@ def extract_text_from_pdf(file_bytes: bytes):
     return text
 
 def extract_tokens_from_image(uploaded_file):
-    # Return (full_text, token_df, line_df)
     pil_img = Image.open(uploaded_file).convert("RGB")
-    token_df, line_df, _ = ocr_image_two_pass(pil_img)
-    full_text = " ".join(line_df["text"].tolist()) if not line_df.empty else ""
-    return full_text, token_df, line_df
+    text = doctr_extract_lines(pil_img)
+    # we don’t get token_df/line_df like Tesseract, so return None
+    return text, None, None
 
 def extract_text_from_file(uploaded_file):
     # Unified: for PDFs return text; for images return text + dfs
