@@ -429,6 +429,7 @@ def parse_grades(text, mode="foundation", line_df=None):
             for alias in alias_map.get(subj, [subj.lower()]):
                 alias_norm = normalize_str(alias)
                 for ln in lines:
+                    st.write(ln)
                     ln_norm = normalize_str(ln)
                     # quick filter using fuzzy match
                     if fuzz.partial_ratio(alias_norm, ln_norm) < 70:
