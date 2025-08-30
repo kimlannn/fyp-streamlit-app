@@ -428,33 +428,34 @@ def parse_grades(text, mode="foundation", line_df=None):
         if not found_grade and lines:
             for alias in alias_map.get(subj, [subj.lower()]):
                 alias_norm = normalize_str(alias)
-                for ln in lines:
-                    st.write(ln)
-                    ln_norm = normalize_str(ln)
-                    # quick filter using fuzzy match
-                    if fuzz.partial_ratio(alias_norm, ln_norm) < 70:
+                for i, ln in enumerate(lines):
+                    if fuzz.partial_ratio(alias_norm, normalize_str(ln)) < 70:
                         continue
-
-                    # locate actual alias in the original line (case-insensitive)
-                    mo = re.search(re.escape(alias), ln, re.IGNORECASE)
-                    tail = ln[mo.end():] if mo else ln  # text after matched alias
-
-                    # check SPM-style keywords first
-                    tail_u = tail.upper()
-                    grade = None
-                    for k, v in grade_keywords.items():
-                        if k in tail_u:
-                            grade = v
+        
+                    # check this line + next 2 lines
+                    for j in range(0, 3):
+                        if i + j >= len(lines):
                             break
-
-                    # otherwise look for single-letter grade (capture +/-)
-                    if not grade:
-                        m = GRADE_AFTER_SUBJ_RE.search(tail_u)
-                        if m:
-                            grade = m.group(1).upper()
-
-                    if grade:
-                        found_grade = grade
+                        tail = lines[i + j].upper()
+        
+                        # SPM keyword first
+                        grade = None
+                        for k, v in grade_keywords.items():
+                            if k in tail:
+                                grade = v
+                                break
+        
+                        # fallback regex (A+, A, A-, B+, etc.)
+                        if not grade:
+                            m = GRADE_AFTER_SUBJ_RE.search(tail)
+                            if m:
+                                grade = m.group(1).upper()
+        
+                        if grade:
+                            found_grade = grade
+                            break
+        
+                    if found_grade:
                         break
                 if found_grade:
                     break
