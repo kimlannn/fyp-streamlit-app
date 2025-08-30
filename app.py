@@ -379,7 +379,7 @@ def parse_grades(text, mode="foundation", line_df=None):
                 # Look for grade token in this merged line
                 match = re.search(r"\b[A-F](?:\+|-)?", ln.upper())
                 if match:
-                    found_grade = match.group(1) + match.group(2)
+                    found_grade = match.group(1)
                     st.write(found_grade)
                     break
 
