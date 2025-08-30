@@ -168,7 +168,7 @@ grade_keywords = {
 }
 
 # Keep a robust grade regex that captures +/- when present
-GRADE_AFTER_SUBJ_RE = re.compile(r"\b([A-F](?:\+|-)?)\b", re.IGNORECASE)
+GRADE_AFTER_SUBJ_RE = re.compile(r"\b([A-F](?:\s*\+|\s*\-)?)(?![A-Z])", re.IGNORECASE)
 
 # Match A+, A, A-, B+, B, B-, ..., F (with optional spaces/newline in between)
 grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)\b", re.IGNORECASE)
@@ -449,7 +449,7 @@ def parse_grades(text, mode="foundation", line_df=None):
                         if not grade:
                             m = GRADE_AFTER_SUBJ_RE.search(tail)
                             if m:
-                                grade = m.group(1).upper()
+                                grade = m.group(1).replace(" ", "").upper()
         
                         if grade:
                             found_grade = grade
