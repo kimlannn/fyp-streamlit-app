@@ -153,6 +153,23 @@ subject_aliases = {
     "advanced mathematics 2": "Advanced Mathematics II",
 }
 
+# SPM-style keywords → canonical grade (checked first in the substring to the right of subject)
+grade_keywords = {
+    "CEMERLANG TERTINGGI": "A+",
+    "CEMERLANG TINGGI": "A",
+    "CEMERLANG": "A-",
+    "KEPUJIAN TERTINGGI": "B+",
+    "KEPUJIAN TINGGI": "B",
+    "KEPUJIAN ATAS": "C+",
+    "KEPUJIAN": "C",
+    "LULUS ATAS": "D",
+    "LULUS": "E",
+    "GAGAL": "F",
+}
+
+# Keep a robust grade regex that captures +/- when present
+GRADE_AFTER_SUBJ_RE = re.compile(r"\b([A-F](?:\+|-)?)\b", re.IGNORECASE)
+
 # Match A+, A, A-, B+, B, B-, ..., F (with optional spaces/newline in between)
 grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)\b", re.IGNORECASE)
 
@@ -316,33 +333,49 @@ def extract_text_from_file(uploaded_file):
 # =========================================
 def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_regex=grade_pattern, fuzz_threshold=80):
     """
-    Find a grade that appears on the same line (or next lines) and to the right
-    of the subject mention.
+    Look for a grade on lines that likely mention subject_alias. Prefer grades
+    that appear to the RIGHT of the subject occurrence (small local window).
+    Works when you have Tesseract-style line_df.
     """
     if line_df is None or line_df.empty:
         return None
 
+    subj_norm = normalize_str(subject_alias)
     best = None
     best_score = -1
-    subj_norm = normalize_str(subject_alias)
 
-    # find candidate lines by fuzzy score
     for _, row in line_df.iterrows():
-        score = fuzz.partial_ratio(subj_norm, row["text_norm"])
-        if score >= fuzz_threshold:
-            # grade on same line? try regex over the raw text
-            text = row["text"]
-            m = grade_regex.search(text)
-            if not m:
-                # allow a messy match fallback
-                m = grade_like_but_messy.search(text)
+        line = row["text"]
+        line_norm = row.get("text_norm", normalize_str(line))
+        score = fuzz.partial_ratio(subj_norm, line_norm)
+        if score < fuzz_threshold:
+            continue
+
+        # try to locate the subject substring in the original line (case-insensitive)
+        mo = re.search(re.escape(subject_alias), line, re.IGNORECASE)
+        tail = line[mo.end():] if mo else line  # text to the right of subject (if found)
+
+        # 1) Check SPM-style keyword phrases first (higher confidence)
+        tail_upper = tail.upper()
+        grade = None
+        for k, v in grade_keywords.items():
+            if k in tail_upper:
+                grade = v
+                break
+
+        # 2) If no keyword, look for explicit grade token in the tail
+        if not grade:
+            m = GRADE_AFTER_SUBJ_RE.search(tail_upper)
             if m:
-                grade = m.group(0).upper().replace(" ", "")
-                # prefer cleaner strict matches
-                sc = score + (10 if grade_regex.search(text) else 0)
-                if sc > best_score:
-                    best = grade
-                    best_score = sc
+                grade = m.group(1).upper()
+
+        # 3) Keep best-scoring candidate
+        if grade:
+            sc = score + (10 if grade_regex.search(tail) else 0)
+            if sc > best_score:
+                best = grade
+                best_score = sc
+
     return best
     
 def preprocess_lines(text):
@@ -365,26 +398,69 @@ def preprocess_lines(text):
     return merged
     
 def parse_grades(text, mode="foundation", line_df=None):
+    """
+    For each expected subject, attempt:
+      (a) layout-aware search (if line_df provided) using find_grade_near_subject
+      (b) fallback: scanning plain text lines (docTR output) but only looking
+          for grade tokens AFTER the subject occurrence on that line
+    """
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
 
-    # Preprocess lines so subject+grade are in one line
-    lines = preprocess_lines(text)
+    alias_map = {}
+    for alias, canon in subject_aliases.items():
+        alias_map.setdefault(canon, []).append(alias)
+
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
 
     for subj in subjects:
         found_grade = None
 
-        for ln in lines:
-            if fuzz.partial_ratio(normalize_str(subj), normalize_str(ln)) >= 70:
-                # Look for grade token in this merged line
-                match = re.search(r"\b[A-F](?:\+|-)?", ln.upper())
-                if match:
-                    found_grade = match.group(0)
-                    st.write(found_grade)
+        # 1) Layout-aware (Tesseract-style line_df)
+        if line_df is not None and not line_df.empty:
+            for alias in alias_map.get(subj, [subj.lower()]):
+                g = find_grade_near_subject(line_df, alias, grade_pattern, fuzz_threshold=80)
+                if g:
+                    found_grade = g
+                    break
+
+        # 2) Fallback: plain text (docTR) — search for subject then grade to the RIGHT
+        if not found_grade and lines:
+            for alias in alias_map.get(subj, [subj.lower()]):
+                alias_norm = normalize_str(alias)
+                for ln in lines:
+                    ln_norm = normalize_str(ln)
+                    # quick filter using fuzzy match
+                    if fuzz.partial_ratio(alias_norm, ln_norm) < 70:
+                        continue
+
+                    # locate actual alias in the original line (case-insensitive)
+                    mo = re.search(re.escape(alias), ln, re.IGNORECASE)
+                    tail = ln[mo.end():] if mo else ln  # text after matched alias
+
+                    # check SPM-style keywords first
+                    tail_u = tail.upper()
+                    grade = None
+                    for k, v in grade_keywords.items():
+                        if k in tail_u:
+                            grade = v
+                            break
+
+                    # otherwise look for single-letter grade (capture +/-)
+                    if not grade:
+                        m = GRADE_AFTER_SUBJ_RE.search(tail_u)
+                        if m:
+                            grade = m.group(1).upper()
+
+                    if grade:
+                        found_grade = grade
+                        break
+                if found_grade:
                     break
 
         results[subj] = found_grade if found_grade else "0"
 
+    # debug output to help you see what's parsed
     st.write("🔎 Parsed Grades (raw):", results)
     return results
 
