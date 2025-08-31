@@ -423,15 +423,14 @@ def parse_grades(text, mode="foundation", line_df=None, debug=True):
     for subj in subjects:
         found_grade = None
         matched_line = None
-        match_type = None
 
-        # -------- 1. Exact alias match --------
+        # -------- Only exact alias match --------
         for alias in alias_map.get(subj, [subj.lower()]):
             alias_norm = normalize_str(alias)
             for i, ln in enumerate(lines):
                 ln_norm = normalize_str(ln)
                 if alias_norm in ln_norm:
-                    # 🔑 only check same line + next line
+                    # only check same line + next line
                     for j in range(0, 2):
                         if i + j >= len(lines):
                             break
@@ -450,51 +449,16 @@ def parse_grades(text, mode="foundation", line_df=None, debug=True):
                         if grade:
                             found_grade = grade
                             matched_line = tail
-                            match_type = "EXACT"
                             break
                     if found_grade:
                         break
             if found_grade:
                 break
 
-        # -------- 2. Fuzzy fallback --------
-        if not found_grade:
-            for alias in alias_map.get(subj, [subj.lower()]):
-                alias_norm = normalize_str(alias)
-                for i, ln in enumerate(lines):
-                    if fuzz.partial_ratio(alias_norm, normalize_str(ln)) < 90:  # stricter
-                        continue
-                    # 🔑 only check same line + next line
-                    for j in range(0, 2):
-                        if i + j >= len(lines):
-                            break
-                        tail = lines[i + j].upper()
-
-                        grade = None
-                        for k, v in grade_keywords.items():
-                            if k in tail:
-                                grade = v
-                                break
-                        if not grade:
-                            m = GRADE_AFTER_SUBJ_RE.search(tail)
-                            if m:
-                                grade = m.group(1).replace(" ", "").upper()
-
-                        if grade:
-                            found_grade = grade
-                            matched_line = tail
-                            match_type = "FUZZY"
-                            break
-                    if found_grade:
-                        break
-                if found_grade:
-                    break
-
-        # if subject truly absent in text, don't assign floating grade
         results[subj] = found_grade if found_grade else "0"
 
         if found_grade:
-            log(f"✅ {subj}: {found_grade} ({match_type}) → from line: '{matched_line}'")
+            log(f"✅ {subj}: {found_grade} (EXACT) → from line: '{matched_line}'")
         else:
             log(f"❌ {subj}: no grade found")
 
