@@ -397,12 +397,13 @@ def preprocess_lines(text):
 
     return merged
     
-def parse_grades(text, mode="foundation", line_df=None):
+def parse_grades(text, mode="foundation", line_df=None, debug=True):
     """
-    For each expected subject, attempt:
-      (a) layout-aware search (if line_df provided) using find_grade_near_subject
-      (b) fallback: scanning plain text lines (docTR output) but only looking
-          for grade tokens AFTER the subject occurrence on that line
+    Extract grades for each subject.
+    - Prefer exact alias match
+    - Fallback to fuzzy match
+    - Only accept grade if subject appears before grade
+    - Debug mode prints extraction reasoning
     """
     subjects = foundation_subjects if mode == "foundation" else degree_subjects
     results = {}
@@ -411,50 +412,76 @@ def parse_grades(text, mode="foundation", line_df=None):
     for alias, canon in subject_aliases.items():
         alias_map.setdefault(canon, []).append(alias)
 
-    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+
+    def log(msg):
+        if debug:
+            st.write(msg)
 
     for subj in subjects:
         found_grade = None
+        matched_line = None
+        match_type = None
 
-        # 1) Layout-aware (Tesseract-style line_df)
-        if line_df is not None and not line_df.empty:
-            for alias in alias_map.get(subj, [subj.lower()]):
-                g = find_grade_near_subject(line_df, alias, grade_pattern, fuzz_threshold=80)
-                if g:
-                    found_grade = g
-                    break
-
-        # 2) Fallback: plain text (docTR) — search for subject then grade to the RIGHT
-        if not found_grade and lines:
-            for alias in alias_map.get(subj, [subj.lower()]):
-                alias_norm = normalize_str(alias)
-                for i, ln in enumerate(lines):
-                    if fuzz.partial_ratio(alias_norm, normalize_str(ln)) < 70:
-                        continue
-        
-                    # check this line + next 2 lines
+        # -------- 1. Exact alias match --------
+        for alias in alias_map.get(subj, [subj.lower()]):
+            alias_norm = normalize_str(alias)
+            for i, ln in enumerate(lines):
+                ln_norm = normalize_str(ln)
+                if alias_norm in ln_norm:   # strict containment
+                    # search this line + next 2
                     for j in range(0, 3):
                         if i + j >= len(lines):
                             break
                         tail = lines[i + j].upper()
-        
-                        # SPM keyword first
+
                         grade = None
                         for k, v in grade_keywords.items():
                             if k in tail:
                                 grade = v
                                 break
-        
-                        # fallback regex (A+, A, A-, B+, etc.)
                         if not grade:
                             m = GRADE_AFTER_SUBJ_RE.search(tail)
                             if m:
                                 grade = m.group(1).replace(" ", "").upper()
-        
+
                         if grade:
                             found_grade = grade
+                            matched_line = tail
+                            match_type = "EXACT"
                             break
-        
+                    if found_grade:
+                        break
+            if found_grade:
+                break
+
+        # -------- 2. Fuzzy fallback --------
+        if not found_grade:
+            for alias in alias_map.get(subj, [subj.lower()]):
+                alias_norm = normalize_str(alias)
+                for i, ln in enumerate(lines):
+                    if fuzz.partial_ratio(alias_norm, normalize_str(ln)) < 85:
+                        continue
+                    for j in range(0, 3):
+                        if i + j >= len(lines):
+                            break
+                        tail = lines[i + j].upper()
+
+                        grade = None
+                        for k, v in grade_keywords.items():
+                            if k in tail:
+                                grade = v
+                                break
+                        if not grade:
+                            m = GRADE_AFTER_SUBJ_RE.search(tail)
+                            if m:
+                                grade = m.group(1).replace(" ", "").upper()
+
+                        if grade:
+                            found_grade = grade
+                            matched_line = tail
+                            match_type = "FUZZY"
+                            break
                     if found_grade:
                         break
                 if found_grade:
@@ -462,8 +489,12 @@ def parse_grades(text, mode="foundation", line_df=None):
 
         results[subj] = found_grade if found_grade else "0"
 
-    # debug output to help you see what's parsed
-    st.write("🔎 Parsed Grades (raw):", results)
+        # Debug logging
+        if found_grade:
+            log(f"✅ {subj}: {found_grade} ({match_type}) → from line: '{matched_line}'")
+        else:
+            log(f"❌ {subj}: no grade found")
+
     return results
 
 # =========================================
