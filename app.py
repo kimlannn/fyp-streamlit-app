@@ -117,6 +117,7 @@ subject_aliases = {
 
     "accounting": "Accounting",
     "akaun": "Accounting",
+    "accounts": "Accounting",
     
     "additional mathematics": "Additional Mathematics",
     "add maths": "Additional Mathematics",
