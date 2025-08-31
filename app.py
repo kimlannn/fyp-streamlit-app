@@ -816,6 +816,33 @@ if "top_predicted" in st.session_state:
             st.session_state.general_scores = scores
             st.session_state.general_submitted = True   # lock answers
 
+            total_answers = sum(scores.values())
+            for field, count in scores.items():
+                if count == total_answers and total_answers > 0:
+                    if field in ["Software Engineering", "Architecture"]:
+                        # Match with top 10 predicted programmes
+                        overlap = [p for p in st.session_state.top_predicted[:10] if field.lower() in p.lower()]
+                        if overlap:
+                            st.session_state.final_general = [field]
+                            st.success(f"🎯 Final Recommended Programme: {field}")
+                        else:
+                            top1 = st.session_state.top_predicted[0] if st.session_state.top_predicted else None
+                            if top1:
+                                st.session_state.final_general = [field, top1]
+                                st.warning(
+                                    f"⚠️ Your selection points strongly to {field}, "
+                                    f"but based on entry requirements we also suggest {top1}."
+                                )
+                                st.success(f"🎯 Final Recommended Programmes: {field}, {top1}")
+                            else:
+                                st.session_state.final_general = [field]
+                                st.success(f"🎯 Final Recommended Programme: {field}")
+                    elif field in ["Engineering", "Maths"]:
+                        st.session_state.field = [field]
+                        st.info(f"ℹ️ You selected all {field} related options, please answer the detailed questionnaire below.")
+                    st.session_state.finalized = True
+                    st.stop()
+
             # Handle outcome
             if all(w in ["Architecture", "Software Engineering"] for w in winners):
                 st.session_state.final_general = winners
