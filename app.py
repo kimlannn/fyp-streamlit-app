@@ -117,17 +117,17 @@ subject_aliases = {
 
     "accounting": "Accounting",
     "akaun": "Accounting",
-
+    
+    "additional mathematics": "Additional Mathematics",
+    "add maths": "Additional Mathematics",
+    "additional mathematic": "Additional Mathematics",
+    "matematik tambahan": "Additional Mathematics",
+    
     "mathematics": "Mathematics",
     "mathematik": "Mathematics",
     "maths": "Mathematics",
     "mathematic": "Mathematics",
     "matematik": "Mathematics",
-
-    "additional mathematics": "Additional Mathematics",
-    "add maths": "Additional Mathematics",
-    "additional mathematic": "Additional Mathematics",
-    "matematik tambahan": "Additional Mathematics",
 
     "science": "Science",
     "sains": "Science",
@@ -726,8 +726,8 @@ if option == "Foundation":
         extracted_grades = parse_grades(text, mode="foundation", line_df=line_df)
 
         with st.expander("🔍 OCR Debug (optional)"):
-            st.write("Raw text (first 1000 chars):")
-            st.code((text or "")[:1000] + ("..." if text and len(text) > 1000 else ""))
+            st.write("Raw text (first 2000 chars):")
+            st.code((text or "")[:2000] + ("..." if text and len(text) > 2000 else ""))
             if token_df is not None and not token_df.empty:
                 st.write("Token samples:")
                 st.dataframe(token_df.head(20))
