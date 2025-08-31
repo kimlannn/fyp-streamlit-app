@@ -123,6 +123,7 @@ subject_aliases = {
     "add maths": "Additional Mathematics",
     "additional mathematic": "Additional Mathematics",
     "matematik tambahan": "Additional Mathematics",
+    "Matematik Tambahan": "Additional Mathematics",
     
     "mathematics": "Mathematics",
     "mathematik": "Mathematics",
