@@ -697,16 +697,15 @@ if option == "Foundation":
                 st.write("Token samples:")
                 st.dataframe(token_df.head(20))
 
-        st.subheader("Validate Extracted Results")
-        grade_options = list(grade_mapping_foundation.keys())
-        corrected_grades = {}
-        for subj in foundation_subjects:
-            grade_val = extracted_grades.get(subj, "0")
-            corrected_grades[subj] = st.selectbox(f"{subj}:", grade_options,
-                                                  index=grade_options.index(grade_val) if grade_val in grade_options else len(grade_options)-1)
+        st.subheader("Extracted Academic Results")
+        # Put extracted grades into a DataFrame for nice display
+        df_results = pd.DataFrame(
+            [{"Subject": subj, "Grade": extracted_grades.get(subj, "0")} for subj in foundation_subjects]
+        )
+        st.dataframe(df_results, use_container_width=True)
 
         if st.button("Get Foundation Recommendation"):
-            user_input = {"Qualification": qualification, **corrected_grades}
+            user_input = {"Qualification": qualification, **extracted_grades}
             X_new = preprocess_foundation(user_input)
             probs = foundation_model.predict(X_new, verbose=0)[0]
             top2_idx = probs.argsort()[-2:][::-1]
@@ -734,16 +733,15 @@ else:
                 st.write("Token samples:")
                 st.dataframe(token_df.head(20))
 
-        st.subheader("Validate Extracted Results")
-        grade_options = list(grade_mapping_degree.keys())
-        corrected_grades = {}
-        for subj in degree_subjects:
-            grade_val = extracted_grades.get(subj, "0")
-            corrected_grades[subj] = st.selectbox(f"{subj}:", grade_options,
-                                                  index=grade_options.index(grade_val) if grade_val in grade_options else len(grade_options)-1)
+        st.subheader("Extracted Academic Results")
+        df_results = pd.DataFrame(
+            [{"Subject": subj, "Grade": extracted_grades.get(subj, "0")} for subj in degree_subjects]
+            + [{"Subject": "CGPA", "Grade": cgpa}]
+        )
+        st.dataframe(df_results, use_container_width=True)
 
         if st.button("Continue to Questionnaire"):
-            user_input = {"Qualification": qualification, "CGPA": cgpa, **corrected_grades}
+            user_input = {"Qualification": qualification, "CGPA": cgpa, **extracted_grades}
             X_new = preprocess_degree(user_input)
             top10 = get_top_n_programmes(degree_model, X_new, degree_encoder, n=10)
         
