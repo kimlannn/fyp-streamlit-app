@@ -109,31 +109,34 @@ def get_top_n_programmes(model, X_new, encoder, n=10):
 
 # Subject aliases -> canonical subject name
 subject_aliases = {
-    "bahasa melayu": "Bahasa Melayu",
-    "b. melayu": "Bahasa Melayu",
-    "bm": "Bahasa Melayu",
-
     "bahasa inggeris": "English",
     "BAHASAINGGERIS": "English",
     "english": "English",
     "b. inggeris": "English",
     "bi": "English",
 
-    "pendidikan moral": "Pendidikan Moral",
-    "sejarah": "Sejarah",
+    "accounting": "Accounting",
+    "akaun": "Accounting",
 
     "mathematics": "Mathematics",
     "mathematik": "Mathematics",
     "maths": "Mathematics",
     "mathematic": "Mathematics",
+    "matematik": "Mathematics",
 
     "additional mathematics": "Additional Mathematics",
     "add maths": "Additional Mathematics",
     "additional mathematic": "Additional Mathematics",
+    "matematik tambahan": "Additional Mathematics",
 
+    "science": "Science",
+    "sains": "Science",
     "physics": "Physics",
+    "fizik": "Physics",
     "chemistry": "Chemistry",
+    "kimia": "Chemistry",
     "biology": "Biology",
+    "biologi": "Biology",
 
     "bahasa cina": "Chinese",
     "chinese": "Chinese",
@@ -155,6 +158,12 @@ subject_aliases = {
 
 # SPM-style keywords → canonical grade (checked first in the substring to the right of subject)
 grade_keywords = {
+    # UEC
+    "A1": "A",
+    "A2": "B", "B3": "B",
+    "B4": "C", "B5": "C",
+    "B6": "D", "C7": "E", "C8": "E", "F9": "F",
+    # SPM
     "CEMERLANG TERTINGGI": "A+",
     "CEMERLANG TINGGI": "A",
     "CEMERLANG": "A-",
