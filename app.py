@@ -826,7 +826,7 @@ if "top_predicted" in st.session_state:
                             st.session_state.final_general = [field]
                             st.success(f"🎯 Final Recommended Programme: {field}")
                         else:
-                            top1 = st.session_state.top_predicted[0] if st.session_state.top_predicted else None
+                            top1 = st.session_state.top_predicted[0] if len(st.session_state.top_predicted) > 0 else None
                             if top1:
                                 st.session_state.final_general = [field, top1]
                                 st.warning(
