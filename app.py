@@ -407,60 +407,61 @@ def preprocess_lines(text):
 
     return merged
     
-# --- Normalization helpers ---
-def normalize_subject(text: str) -> str:
-    """Normalize subject/alias strings for robust matching."""
-    text = text.lower()
-    text = re.sub(r"[^a-z\s]", " ", text)  # keep only letters + spaces
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+def parse_grades(text, mode="foundation", line_df=None, debug=True):
+    subjects = foundation_subjects if mode == "foundation" else degree_subjects
+    results = {}
 
-def normalize_grade(text: str) -> str:
-    """Normalize grade text."""
-    return text.upper().strip()
-
-# --- Preprocess aliases into a canonical map ---
-def build_alias_map(subject_aliases):
     alias_map = {}
     for alias, canon in subject_aliases.items():
-        norm_alias = normalize_subject(alias)
-        alias_map.setdefault(canon, []).append(norm_alias)
-    return alias_map
+        alias_map.setdefault(canon, []).append(alias)
 
-# --- Main parsing function ---
-def parse_grades(lines, subjects, subject_aliases, grade_keywords):
-    alias_map = build_alias_map(subject_aliases)
+    lines = preprocess_lines(text)
 
-    results = {}
+    def log(msg):
+        if debug:
+            st.write(msg)
+
     for subj in subjects:
         found_grade = None
         matched_line = None
 
-        # Get all normalized aliases for this subject
-        aliases = alias_map.get(subj, [normalize_subject(subj)])
+        # -------- Only exact alias match --------
+        for alias in alias_map.get(subj, [subj.lower()]):
+            alias_norm = normalize_str(alias)
+            for i, ln in enumerate(lines):
+                ln_norm = normalize_str(ln)
+                if alias_norm in ln_norm:
+                    # only check same line + next line
+                    for j in range(0, 2):
+                        if i + j >= len(lines):
+                            break
+                        tail = lines[i + j].upper()
 
-        for i, ln in enumerate(lines):
-            ln_norm = normalize_subject(ln)
+                        grade = None
+                        for k, v in grade_keywords.items():
+                            if k in tail:
+                                grade = v
+                                break
+                        if not grade:
+                            m = GRADE_AFTER_SUBJ_RE.search(tail)
+                            if m:
+                                grade = m.group(1).replace(" ", "").upper()
 
-            # check if any alias matches
-            if any(alias in ln_norm for alias in aliases):
-                # now look for grade in the same line
-                for grade, g_aliases in grade_keywords.items():
-                    for g in g_aliases:
-                        if re.search(rf"\b{re.escape(g)}\b", ln, re.IGNORECASE):
-                            found_grade = normalize_grade(grade)
-                            matched_line = ln
+                        if grade:
+                            found_grade = grade
+                            matched_line = tail
                             break
                     if found_grade:
                         break
-
             if found_grade:
                 break
 
-        results[subj] = {
-            "grade": found_grade if found_grade else "0",
-            "matched_line": matched_line if matched_line else None
-        }
+        results[subj] = found_grade if found_grade else "0"
+
+        if found_grade:
+            log(f"✅ {subj}: {found_grade} (EXACT) → from line: '{matched_line}'")
+        else:
+            log(f"❌ {subj}: no grade found")
 
     return results
 
