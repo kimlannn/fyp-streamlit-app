@@ -874,7 +874,8 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_detail = pick_two(winners)
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
-
+                
+        st.write(chosen_fields)
         # --- Finalize only when both ready ---
         need_maths = "Maths" in chosen_fields
         need_eng = "Engineering" in chosen_fields
