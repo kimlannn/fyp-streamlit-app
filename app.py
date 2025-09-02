@@ -840,11 +840,14 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_done = True
 
                 # finalize recs
-                overlap = [p for p in st.session_state.top_predicted[:10] if chosen.lower() in p.lower()]
+                top_pred = st.session_state.top_predicted[:10]
+                overlap = [p for p in top_pred if chosen.lower() in p.lower()]
                 if overlap:
-                    st.session_state.final_general = [chosen, overlap[0]]
+                    remaining = [p for p in top_pred if p not in overlap]
+                    top1 = remaining[0] if remaining else None
+                    st.session_state.final_general = [chosen] + ([top1] if top1 else [])
                 else:
-                    top1 = st.session_state.top_predicted[0] if st.session_state.top_predicted else None
+                    top1 = top_pred[0] if top_pred else None
                     st.session_state.final_general = [chosen] + ([top1] if top1 else [])
 
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
@@ -860,11 +863,14 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_done = True
 
                 # finalize recs
-                overlap = [p for p in st.session_state.top_predicted[:10] if chosen.lower() in p.lower()]
+                top_pred = st.session_state.top_predicted[:10]
+                overlap = [p for p in top_pred if chosen.lower() in p.lower()]
                 if overlap:
-                    st.session_state.final_general = [chosen, overlap[0]]
+                    remaining = [p for p in top_pred if p not in overlap]
+                    top1 = remaining[0] if remaining else None
+                    st.session_state.final_general = [chosen] + ([top1] if top1 else [])
                 else:
-                    top1 = st.session_state.top_predicted[0] if st.session_state.top_predicted else None
+                    top1 = top_pred[0] if top_pred else None
                     st.session_state.final_general = [chosen] + ([top1] if top1 else [])
 
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
