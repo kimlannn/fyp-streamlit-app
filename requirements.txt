@@ -8,5 +8,4 @@ pillow
 joblib
 python-doctr[torch]
 opencv-python-headless
-rapidfuzz
 pdf2image
