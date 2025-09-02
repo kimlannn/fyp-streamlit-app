@@ -458,11 +458,6 @@ def parse_grades(text, mode="foundation", line_df=None, debug=True):
 
         results[subj] = found_grade if found_grade else "0"
 
-        if found_grade:
-            log(f"✅ {subj}: {found_grade} (EXACT) → from line: '{matched_line}'")
-        else:
-            log(f"❌ {subj}: no grade found")
-
     return results
 
 # =========================================
@@ -690,13 +685,6 @@ if option == "Foundation":
         text, token_df, line_df = extract_text_from_file(uploaded_file)
         extracted_grades = parse_grades(text, mode="foundation", line_df=line_df)
 
-        with st.expander("🔍 OCR Debug (optional)"):
-            st.write("Raw text (first 2000 chars):")
-            st.code((text or "")[:2000] + ("..." if text and len(text) > 2000 else ""))
-            if token_df is not None and not token_df.empty:
-                st.write("Token samples:")
-                st.dataframe(token_df.head(20))
-
         st.subheader("Extracted Academic Results")
         # Put extracted grades into a DataFrame for nice display
         df_results = pd.DataFrame(
@@ -725,13 +713,6 @@ else:
     if uploaded_file:
         text, token_df, line_df = extract_text_from_file(uploaded_file)
         extracted_grades = parse_grades(text, mode="degree", line_df=line_df)
-
-        with st.expander("🔍 OCR Debug (optional)"):
-            st.write("Raw text (first 600 chars):")
-            st.code((text or "")[:600] + ("..." if text and len(text) > 600 else ""))
-            if token_df is not None and not token_df.empty:
-                st.write("Token samples:")
-                st.dataframe(token_df.head(20))
 
         st.subheader("Extracted Academic Results")
         df_results = pd.DataFrame(
@@ -871,8 +852,8 @@ if "top_predicted" in st.session_state:
     if "field" in st.session_state:
         chosen_fields = st.session_state.field
 
-        # --- Maths detailed ---
-        if "Maths" in chosen_fields and "maths_done" not in st.session_state:
+        # --- Maths only ---
+        if chosen_fields == ["Maths"] and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
             if st.button("Submit Maths Questionnaire"):
@@ -882,8 +863,8 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_done = True
                 st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
 
-        # --- Engineering detailed ---
-        if "Engineering" in chosen_fields and "eng_done" not in st.session_state:
+        # --- Engineering only ---
+        if chosen_fields == ["Engineering"] and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
             eng_results = run_detailed_questionnaire(engineering_questions, "eng")
             if st.button("Submit Engineering Questionnaire"):
@@ -892,6 +873,30 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_detail = pick_two(winners)
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
+
+        # --- Both Engineering + Maths ---
+        if set(chosen_fields) == {"Engineering", "Maths"}:
+            # Maths detailed
+            if "maths_done" not in st.session_state:
+                st.subheader("Maths Detailed Questionnaire")
+                maths_results = run_detailed_questionnaire(maths_questions, "maths")
+                if st.button("Submit Maths Questionnaire"):
+                    max_val = max(maths_results.values())
+                    winners = [p for p, v in maths_results.items() if v == max_val]
+                    st.session_state.maths_detail = pick_two(winners)
+                    st.session_state.maths_done = True
+                    st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
+
+            # Engineering detailed
+            if "eng_done" not in st.session_state:
+                st.subheader("Engineering Detailed Questionnaire")
+                eng_results = run_detailed_questionnaire(engineering_questions, "eng")
+                if st.button("Submit Engineering Questionnaire"):
+                    max_val = max(eng_results.values())
+                    winners = [p for p, v in eng_results.items() if v == max_val]
+                    st.session_state.eng_detail = pick_two(winners)
+                    st.session_state.eng_done = True
+                    st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
 
         # --- Finalize only when both ready ---
         need_maths = "Maths" in chosen_fields
