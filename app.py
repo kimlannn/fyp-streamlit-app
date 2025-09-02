@@ -750,16 +750,6 @@ def normalize_programme(name: str) -> str:
     return name.strip()
 
 # =========================================
-# Final selection helpers
-# =========================================
-def pick_two(programmes):
-    """Pick up to 2 programmes according to tie rules."""
-    unique = list(dict.fromkeys(programmes))  # keep order, dedupe
-    if len(unique) <= 2:
-        return unique
-    return random.sample(unique, 2)
-
-# =========================================
 # Questionnaire Flow (Degree only)
 # =========================================
 if "top_predicted" in st.session_state:
