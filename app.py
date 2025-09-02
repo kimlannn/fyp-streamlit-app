@@ -813,7 +813,7 @@ if "top_predicted" in st.session_state:
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
         
             elif general_outcome in ["Engineering", "Maths"]:
-                st.session_state.field = general_outcome
+                st.session_state.general_outcome = general_outcome
                 st.info(f"ℹ️ You selected {general_outcome}, please answer the detailed questionnaire below.")
 
     # --- After submission: show locked version ---
