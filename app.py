@@ -729,7 +729,7 @@ else:
             # Persist top-10 across reruns
             st.session_state["top_predicted"] = top10
         
-    # ✅ Always show top-10 if available
+    # Always show top-10 if available
     if "top_predicted" in st.session_state:
         st.info("📊 Top 10 Academic-based Recommendations:\n\n" + 
                 "\n".join([f"{i+1}. {p}" for i, p in enumerate(st.session_state['top_predicted'])]))
@@ -837,7 +837,6 @@ if "top_predicted" in st.session_state:
 
     # --- After submission: show locked version ---
     else:
-        st.subheader("✅ General Questionnaire (Your Answers)")
         for idx, item in enumerate(general_questions):
             q = item["question"]
             options_map = item["options"]
@@ -875,13 +874,13 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
                 
-        st.write(chosen_fields)
         # --- Finalize only when both ready ---
         need_maths = "Maths" in chosen_fields
         need_eng = "Engineering" in chosen_fields
         maths_ready = (not need_maths) or ("maths_done" in st.session_state)
         eng_ready = (not need_eng) or ("eng_done" in st.session_state)
 
+        st.write(st.session_state)
         if maths_ready and eng_ready and ("finalized" not in st.session_state):
             detailed_results = []
             if "maths_detail" in st.session_state:
