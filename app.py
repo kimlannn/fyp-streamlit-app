@@ -16,12 +16,7 @@ import re
 import random
 from io import BytesIO
 
-# Fuzzy matching for noisy OCR subject names
-from rapidfuzz import fuzz, process
-
-# =========================================
 # Cache model loading for speed
-# =========================================
 @st.cache_resource
 def load_foundation_model():
     model = load_model("foundation_model.h5", compile=False)
@@ -41,9 +36,7 @@ def load_degree_model():
 foundation_model, foundation_scaler, foundation_encoder = load_foundation_model()
 degree_model, degree_scaler, degree_encoder = load_degree_model()
 
-# =========================================
 # Mappings
-# =========================================
 grade_mapping_foundation = {
     "A": 6, "A+": 6, "A-": 6,
     "B": 5, "B+": 5, "B-": 5,
@@ -77,9 +70,7 @@ degree_subjects = ["Mathematics", "Additional Mathematics", "English", "Physics"
                    "Biology", "Chemistry", "ICT", "Technology", "Pendidikan Seni",
                    "Advanced Mathematics I", "Advanced Mathematics II"]
 
-# =========================================
 # Preprocessing
-# =========================================
 @st.cache_data
 def preprocess_foundation(user_input):
     df_new = pd.DataFrame([user_input])
@@ -103,11 +94,6 @@ def get_top_n_programmes(model, X_new, encoder, n=10):
     top_idx = np.argsort(pred_probs)[::-1][:n]
     return encoder.inverse_transform(top_idx)
 
-# =========================================
-# OCR helpers (Tesseract + OpenCV + fuzzy matching)
-# =========================================
-
-# Subject aliases -> canonical subject name
 subject_aliases = {
     "bahasa inggeris": "English",
     "BAHASAINGGERIS": "English",
@@ -157,7 +143,6 @@ subject_aliases = {
     "advanced mathematics 2": "Advanced Mathematics II",
 }
 
-# SPM-style keywords → canonical grade (checked first in the substring to the right of subject)
 grade_keywords = {
     # UEC
     "A1": "A",
@@ -177,13 +162,8 @@ grade_keywords = {
     "GAGAL": "F",
 }
 
-# Keep a robust grade regex that captures +/- when present
 GRADE_AFTER_SUBJ_RE = re.compile(r"\b([A-F](?:\s*\+|\s*\-)?)(?![A-Z])", re.IGNORECASE)
-
-# Match A+, A, A-, B+, B, B-, ..., F (with optional spaces/newline in between)
 grade_pattern = re.compile(r"\b(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D-|D|E|F)\b", re.IGNORECASE)
-
-# More forgiving: captures grades even if extra spaces/newlines inside
 grade_like_but_messy = re.compile(
     r"(A\s*\+|A\s*-?|B\s*\+|B\s*-?|C\s*\+|C\s*-?|D\s*\+|D\s*-?|E|F)",
     re.IGNORECASE
@@ -338,9 +318,7 @@ def extract_text_from_file(uploaded_file):
         text, token_df, line_df = extract_tokens_from_image(uploaded_file)
         return text, token_df, line_df
 
-# =========================================
-# Grade parsing (layout-aware)
-# =========================================
+# Grade parsing
 def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_regex=grade_pattern, fuzz_threshold=80):
     """
     Look for a grade on lines that likely mention subject_alias. Prefer grades
@@ -361,25 +339,21 @@ def find_grade_near_subject(line_df: pd.DataFrame, subject_alias: str, grade_reg
         if score < fuzz_threshold:
             continue
 
-        # try to locate the subject substring in the original line (case-insensitive)
         mo = re.search(re.escape(subject_alias), line, re.IGNORECASE)
-        tail = line[mo.end():] if mo else line  # text to the right of subject (if found)
+        tail = line[mo.end():] if mo else line
 
-        # 1) Check SPM-style keyword phrases first (higher confidence)
         tail_upper = tail.upper()
         grade = None
         for k, v in grade_keywords.items():
             if k in tail_upper:
                 grade = v
                 break
-
-        # 2) If no keyword, look for explicit grade token in the tail
+        
         if not grade:
             m = GRADE_AFTER_SUBJ_RE.search(tail_upper)
             if m:
                 grade = m.group(1).upper()
 
-        # 3) Keep best-scoring candidate
         if grade:
             sc = score + (10 if grade_regex.search(tail) else 0)
             if sc > best_score:
@@ -398,7 +372,6 @@ def preprocess_lines(text):
             skip_next = False
             continue
 
-        # If this line is subject and next line looks like a grade → merge
         if i + 1 < len(lines) and re.match(r"^[A-F][+-]?$", lines[i+1].strip().upper()):
             merged.append(f"{lines[i]} {lines[i+1]}")
             skip_next = True
@@ -425,7 +398,6 @@ def parse_grades(text, mode="foundation", line_df=None, debug=True):
         found_grade = None
         matched_line = None
 
-        # -------- Only exact alias match --------
         for alias in alias_map.get(subj, [subj.lower()]):
             alias_norm = normalize_str(alias)
             for i, ln in enumerate(lines):
@@ -460,9 +432,7 @@ def parse_grades(text, mode="foundation", line_df=None, debug=True):
 
     return results
 
-# =========================================
 # Questionnaire
-# =========================================
 general_questions = [
     {
         "question": "Q1: Which activity do you enjoy the most?",
@@ -642,9 +612,6 @@ engineering_questions = {
     }
 }
 
-# =========================================
-# Helper for running questionnaire
-# =========================================
 def run_detailed_questionnaire(questions, key_prefix):
     results = {}
     for idx, (q, options) in enumerate(questions.items()):
@@ -661,9 +628,7 @@ def run_detailed_questionnaire(questions, key_prefix):
         results[chosen] = results.get(chosen, 0) + 1
     return results
 
-# =========================================
 # Streamlit App
-# =========================================
 st.title("🎓 UTAR Programme Recommendation System")
 option = st.radio("Choose Recommendation Type:", ["Foundation", "Degree Programme"])
 
@@ -675,7 +640,7 @@ programme_mapping = {
 }
 programme_reverse_mapping = {v: k for k, v in programme_mapping.items()}
 
-# ===== Foundation Path =====
+# Foundation Path
 if option == "Foundation":
     st.header("Foundation Programme Recommendation")
     uploaded_file = st.file_uploader("Upload your academic result (PDF/Image)", type=["pdf", "png", "jpg", "jpeg"])
@@ -703,7 +668,7 @@ if option == "Foundation":
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
 
-# ===== Degree Path =====
+# Degree Path
 else:
     st.header("Degree Programme Recommendation")
     uploaded_file = st.file_uploader("Upload your academic result (PDF/Image)", type=["pdf", "png", "jpg", "jpeg"])
@@ -734,9 +699,6 @@ else:
         st.info("📊 Top 10 Academic-based Recommendations:\n\n" + 
                 "\n".join([f"{i+1}. {p}" for i, p in enumerate(st.session_state['top_predicted'])]))
 
-# =========================================
-# Normalization helper for programme names
-# =========================================
 def normalize_programme(name: str) -> str:
     """
     Normalize programme names by removing degree prefixes/suffixes
@@ -749,13 +711,10 @@ def normalize_programme(name: str) -> str:
     name = name.replace("honours", "")
     return name.strip()
 
-# =========================================
 # Questionnaire Flow (Degree only)
-# =========================================
 if "top_predicted" in st.session_state:
     st.header("General Interest Questionnaire")
 
-    # --- First run: show questionnaire ---
     if "general_submitted" not in st.session_state:
         scores = {"Maths": 0, "Engineering": 0, "Software Engineering": 0, "Architecture": 0}
 
@@ -790,7 +749,6 @@ if "top_predicted" in st.session_state:
             st.session_state.general_scores = scores
             st.session_state.general_submitted = True
             
-            # === Case 1: SE / Arch -> finalize immediately ===
             if general_outcome in ["Software Engineering", "Architecture"]:
                 top_pred = st.session_state.top_predicted[:10]
                 if any(general_outcome.lower() in p.lower() for p in top_pred):
@@ -804,11 +762,11 @@ if "top_predicted" in st.session_state:
                         "We recommend the top 2 predicted programmes instead."
                     )
         
-                st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
+                st.success(f"Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
         
             elif general_outcome in ["Engineering", "Maths"]:
                 st.session_state.general_outcome = general_outcome
-                st.info(f"ℹ️ You selected {general_outcome}, please answer the detailed questionnaire below.")
+                st.info(f"You selected {general_outcome}, please answer the detailed questionnaire below.")
 
     # --- After submission: show locked version ---
     else:
@@ -822,7 +780,6 @@ if "top_predicted" in st.session_state:
 
         st.write("**Top Field of Interest:** " + st.session_state.general_outcome)
 
-        # === Detailed Questionnaire Stage ===
         if st.session_state.general_outcome == "Maths" and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
@@ -833,7 +790,6 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_detail = chosen
                 st.session_state.maths_done = True
 
-                # finalize recs
                 top_pred = st.session_state.top_predicted[:10]
                 overlap = [p for p in top_pred if chosen.lower() in p.lower()]
                 if overlap:
@@ -847,7 +803,7 @@ if "top_predicted" in st.session_state:
                         "We recommend the top 2 predicted programmes instead."
                     )
 
-                st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
+                st.success(f"Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
 
         if st.session_state.general_outcome == "Engineering" and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
@@ -859,7 +815,6 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_detail = chosen
                 st.session_state.eng_done = True
 
-                # finalize recs
                 top_pred = st.session_state.top_predicted[:10]
                 overlap = [p for p in top_pred if chosen.lower() in p.lower()]
                 if overlap:
@@ -869,15 +824,13 @@ if "top_predicted" in st.session_state:
                 else:
                     st.session_state.final_general = top_pred[:2]
                     st.info(
-                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        f"Your questionnaire outcome {chosen} did not match the top 10 predictions. "
                         "We recommend the top 2 predicted programmes instead."
                     )
 
-                st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
+                st.success(f"Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
 
-# =========================================
-# 🔄 Run Again Button (reset + scroll top)
-# =========================================
+# Run Again Button (reset + scroll top)
 def reset_all():
     # clear questionnaire + predictions
     keys_to_clear = [k for k in st.session_state.keys()]
