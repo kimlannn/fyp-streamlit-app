@@ -880,7 +880,7 @@ if "top_predicted" in st.session_state:
         maths_ready = (not need_maths) or ("maths_done" in st.session_state)
         eng_ready = (not need_eng) or ("eng_done" in st.session_state)
 
-        st.write(st.session_state)
+        st.write("finalized" not in st.session_state)
         if maths_ready and eng_ready and ("finalized" not in st.session_state):
             detailed_results = []
             if "maths_detail" in st.session_state:
