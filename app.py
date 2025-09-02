@@ -839,7 +839,6 @@ if "top_predicted" in st.session_state:
                         st.session_state.field = [field]
                         st.info(f"ℹ️ You selected all {field} related options, please answer the detailed questionnaire below.")
                     st.session_state.finalized = True
-                    st.stop()
 
             # Handle outcome
             if all(w in ["Architecture", "Software Engineering"] for w in winners):
