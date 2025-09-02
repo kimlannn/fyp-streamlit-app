@@ -783,11 +783,11 @@ if "top_predicted" in st.session_state:
 
             ans = st.radio(q, shuffled, key=f"general_{idx}")
             chosen_field = options_map[ans]
-            st.write(chosen_field)
             scores[chosen_field] += 1
 
         if st.button("Submit General Questionnaire"):
             sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            st.write(sorted_scores)
             winners = [sorted_scores[0][0]]
             if len(sorted_scores) > 1:
                 winners.append(sorted_scores[1][0])
