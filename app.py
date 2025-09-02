@@ -800,7 +800,7 @@ if "top_predicted" in st.session_state:
                 else:
                     st.session_state.final_general = top_pred[:2]
                     st.info(
-                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        f"Your questionnaire outcome {general_outcome} did not match the top 10 predictions. "
                         "We recommend the top 2 predicted programmes instead."
                     )
         
@@ -843,7 +843,7 @@ if "top_predicted" in st.session_state:
                 else:
                     st.session_state.final_general = top_pred[:2]
                     st.info(
-                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        f"Your questionnaire outcome {chosen} did not match the top 10 predictions. "
                         "We recommend the top 2 predicted programmes instead."
                     )
 
