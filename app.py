@@ -792,13 +792,17 @@ if "top_predicted" in st.session_state:
             
             # === Case 1: SE / Arch -> finalize immediately ===
             if general_outcome in ["Software Engineering", "Architecture"]:
-                overlap = [p for p in st.session_state.top_predicted[:10] 
-                           if general_outcome.lower() in p.lower()]
-                if overlap:
-                    st.session_state.final_general = [general_outcome, overlap[0]]
-                else:
-                    top1 = st.session_state.top_predicted[0] if st.session_state.top_predicted else None
+                top_pred = st.session_state.top_predicted[:10]
+                if any(general_outcome.lower() in p.lower() for p in top_pred):
+                    remaining = [p for p in top_pred if general_outcome.lower() not in p.lower()]
+                    top1 = remaining[0] if remaining else None
                     st.session_state.final_general = [general_outcome] + ([top1] if top1 else [])
+                else:
+                    st.session_state.final_general = top_pred[:2]
+                    st.info(
+                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        "We recommend the top 2 predicted programmes instead."
+                    )
         
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
         
@@ -837,8 +841,11 @@ if "top_predicted" in st.session_state:
                     top1 = remaining[0] if remaining else None
                     st.session_state.final_general = [chosen] + ([top1] if top1 else [])
                 else:
-                    top1 = top_pred[0] if top_pred else None
-                    st.session_state.final_general = [chosen] + ([top1] if top1 else [])
+                    st.session_state.final_general = top_pred[:2]
+                    st.info(
+                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        "We recommend the top 2 predicted programmes instead."
+                    )
 
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
 
@@ -860,8 +867,11 @@ if "top_predicted" in st.session_state:
                     top1 = remaining[0] if remaining else None
                     st.session_state.final_general = [chosen] + ([top1] if top1 else [])
                 else:
-                    top1 = top_pred[0] if top_pred else None
-                    st.session_state.final_general = [chosen] + ([top1] if top1 else [])
+                    st.session_state.final_general = top_pred[:2]
+                    st.info(
+                        "ℹ️ Your questionnaire outcome did not match the top 10 predictions. "
+                        "We recommend the top 2 predicted programmes instead."
+                    )
 
                 st.success(f"🎯 Final Recommended Programme(s): {', '.join(st.session_state.final_general)}")
 
