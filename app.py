@@ -853,8 +853,8 @@ if "top_predicted" in st.session_state:
     if "field" in st.session_state:
         chosen_fields = st.session_state.field
 
-        # --- Maths only ---
-        if chosen_fields == ["Maths"] and "maths_done" not in st.session_state:
+        # --- Maths detailed ---
+        if "Maths" in chosen_fields and "maths_done" not in st.session_state:
             st.subheader("Maths Detailed Questionnaire")
             maths_results = run_detailed_questionnaire(maths_questions, "maths")
             if st.button("Submit Maths Questionnaire"):
@@ -863,9 +863,9 @@ if "top_predicted" in st.session_state:
                 st.session_state.maths_detail = pick_two(winners)
                 st.session_state.maths_done = True
                 st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
-
-        # --- Engineering only ---
-        if chosen_fields == ["Engineering"] and "eng_done" not in st.session_state:
+        
+        # --- Engineering detailed ---
+        if "Engineering" in chosen_fields and "eng_done" not in st.session_state:
             st.subheader("Engineering Detailed Questionnaire")
             eng_results = run_detailed_questionnaire(engineering_questions, "eng")
             if st.button("Submit Engineering Questionnaire"):
@@ -874,30 +874,6 @@ if "top_predicted" in st.session_state:
                 st.session_state.eng_detail = pick_two(winners)
                 st.session_state.eng_done = True
                 st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
-
-        # --- Both Engineering + Maths ---
-        if set(chosen_fields) == {"Engineering", "Maths"}:
-            # Maths detailed
-            if "maths_done" not in st.session_state:
-                st.subheader("Maths Detailed Questionnaire")
-                maths_results = run_detailed_questionnaire(maths_questions, "maths")
-                if st.button("Submit Maths Questionnaire"):
-                    max_val = max(maths_results.values())
-                    winners = [p for p, v in maths_results.items() if v == max_val]
-                    st.session_state.maths_detail = pick_two(winners)
-                    st.session_state.maths_done = True
-                    st.success(f"Maths focus: {', '.join(st.session_state.maths_detail)}")
-
-            # Engineering detailed
-            if "eng_done" not in st.session_state:
-                st.subheader("Engineering Detailed Questionnaire")
-                eng_results = run_detailed_questionnaire(engineering_questions, "eng")
-                if st.button("Submit Engineering Questionnaire"):
-                    max_val = max(eng_results.values())
-                    winners = [p for p, v in eng_results.items() if v == max_val]
-                    st.session_state.eng_detail = pick_two(winners)
-                    st.session_state.eng_done = True
-                    st.success(f"Engineering focus: {', '.join(st.session_state.eng_detail)}")
 
         # --- Finalize only when both ready ---
         need_maths = "Maths" in chosen_fields
