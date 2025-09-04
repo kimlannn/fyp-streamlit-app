@@ -64,7 +64,7 @@ qualification_mapping_degree = {
 }
 
 foundation_subjects = ["Mathematics", "English", "Science", "Physics", "Chemistry",
-                       "Biology", "Additional Mathematics", "Accounting", "Chinese", "Art"]
+                       "Biology", "Additional Mathematics", "Accounting", "Chinese", "Art", "Economics", "Business"]
 
 degree_subjects = ["Mathematics", "Additional Mathematics", "English", "Physics",
                    "Biology", "Chemistry", "ICT", "Technology", "Pendidikan Seni",
@@ -132,6 +132,13 @@ subject_aliases = {
     "pendidikan seni": "Art",
     "art": "Art",
     "seni": "Art",
+
+    "economy": "Economics",
+    "economics": "Economics",
+    "ekonomi": "Economics",
+
+    "business": "Business",
+    "perdagangan": "Business",
 
     "ict": "ICT",
     "information and communication technology": "ICT",
