@@ -669,9 +669,21 @@ if option == "Foundation":
             user_input = {"Qualification": qualification, **extracted_grades}
             X_new = preprocess_foundation(user_input)
             probs = foundation_model.predict(X_new, verbose=0)[0]
-            top2_idx = probs.argsort()[-2:][::-1]
+
+            # --- Rule: Filter Science Streams based on required subjects ---
+            # Physical Science (needs Physics + Chemistry)
+            if extracted_grades.get("Physics", "0") == "0" or extracted_grades.get("Chemistry", "0") == "0":
+                phys_idx = programme_mapping.get("FOUNDATION IN SCIENCE Physical Science stream (Stream P)")
+                if phys_idx is not None:
+                    probs[phys_idx] = -1  # block this programme
         
-            # Map numbers back to names
+            # Biological Science (needs Biology + Chemistry)
+            if extracted_grades.get("Biology", "0") == "0" or extracted_grades.get("Chemistry", "0") == "0":
+                bio_idx = programme_mapping.get("FOUNDATION IN SCIENCE Biological Science stream (Stream S)")
+                if bio_idx is not None:
+                    probs[bio_idx] = -1  # block this programme
+            
+            top2_idx = probs.argsort()[-2:][::-1]
             top2_progs = [programme_reverse_mapping[idx] for idx in top2_idx]
             st.success(f"Top Recommendation: {top2_progs[0]}")
             st.info(f"Alternative Recommendation: {top2_progs[1]}")
