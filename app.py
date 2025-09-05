@@ -139,6 +139,7 @@ subject_aliases = {
 
     "business": "Business",
     "perdagangan": "Business",
+    "perniagaan": "Business",
 
     "ict": "ICT",
     "information and communication technology": "ICT",
